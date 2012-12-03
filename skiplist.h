@@ -4,11 +4,9 @@
  * Defintion of the element type
  */
 
-typedef int SkiplistElement;
+typedef void * SkiplistElement;
 
-#define SKIPLIST_MIN_ELEMENT INT_MIN
-
-#define SKIPLIST_MAX_ELEMENT INT_MAX
+#define SKIPLIST_NULL_ELEMENT NULL
 
 #define SKIPLIST_CMP_ELEMENTS(E1, E2) (E1 > E2 ? 1 : (E1 < E2 ? -1 : 0))
 
@@ -18,8 +16,14 @@ typedef int SkiplistElement;
 
 #define SKIPLIST_NUM_OF_LEVELS 30
 
+#define SKIPLIST_NORMAL_NODE 1
+#define SKIPLIST_LEFT_BORDER_NODE 1 << 2
+#define SKIPLIST_RIGHT_BORDER_NODE 1 << 1
+
 
 typedef struct skiplist {
+    //contains information about if it is a boarder point
+    int info;
     SkiplistElement  element;
     int  num_of_levels;
     struct skiplist * lower_lists[];    

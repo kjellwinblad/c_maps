@@ -7,6 +7,7 @@
 
 #include "skiplist.h"
 
+#define TO_VP(intValue) (void *)(intValue)
 
 #define T(testFunCall, tesName)                 \
     printf("STARTING TEST: ");                  \
@@ -24,6 +25,31 @@ void test(int success, char msg[]){
 
 }
 
+
+void print_skiplist(SkipList* skiplist){
+
+    int i = 0;
+    int n;
+    printf("PRINTING SKIPLIST\n===============================================\n");
+
+    while(!(skiplist->info & SKIPLIST_RIGHT_BORDER_NODE)){
+        printf("NODE NR: %d      ref %lu\n", i, skiplist);
+        printf("VALUE %d\n",skiplist->element);
+        printf("NUM LEVELS %d\n",skiplist->num_of_levels);
+        for(n = 0; n < skiplist->num_of_levels; n++){
+            printf("SUB LIST %d: %lu\n",n,skiplist->lower_lists[n]);
+            printf("__________________________________________________________________\n");
+        }
+        i++;
+        skiplist = skiplist->lower_lists[skiplist->num_of_levels-1];
+    
+    }
+
+    printf("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
+
+}
+
+
 int test_create_and_delete(){
     SkipList* skiplist = skiplist_new();
     skiplist_delete(skiplist);
@@ -33,21 +59,21 @@ int test_create_and_delete(){
 int test_insert(){
     SkipList* skiplist = skiplist_new();
 
-    SkiplistElement el = skiplist_put(skiplist, 10);
+    SkiplistElement el = skiplist_put(skiplist, TO_VP(10));
 
     skiplist_delete(skiplist);
 
-    return el == SKIPLIST_MIN_ELEMENT;
+    return el == NULL;
 }
 
 int test_insert_new(){
     SkipList* skiplist = skiplist_new();
               
-    int el1 = skiplist_put_new(skiplist, 10);
+    int el1 = skiplist_put_new(skiplist, TO_VP(10));
             
-    assert(skiplist_lookup(skiplist, 10) == 10);
+    assert(skiplist_lookup(skiplist, TO_VP(10)) == TO_VP(10));
 
-    int el2 = skiplist_put_new(skiplist, 10);
+    int el2 = skiplist_put_new(skiplist, TO_VP(10));
 
     skiplist_delete(skiplist);
 
@@ -57,13 +83,17 @@ int test_insert_new(){
 int test_insert_write_over(){
     SkipList* skiplist = skiplist_new();
 
-    SkiplistElement el = skiplist_put(skiplist, 10);
+    SkiplistElement el = skiplist_put(skiplist, TO_VP(10));
 
-    el = skiplist_put(skiplist, 10);
+    skiplist_put(skiplist, TO_VP(5));
+
+    skiplist_put(skiplist, TO_VP(15));
+
+    el = skiplist_put(skiplist, TO_VP(10));
 
     skiplist_delete(skiplist);
 
-    return el == 10;
+    return el == TO_VP(10);
 }
 
 int test_lookup(){
@@ -71,13 +101,13 @@ int test_lookup(){
 
     SkiplistElement el;
 
-    skiplist_put(skiplist, 42);
+    skiplist_put(skiplist, TO_VP(42));
 
-    el = skiplist_lookup(skiplist, 42);
+    el = skiplist_lookup(skiplist, TO_VP(42));
     
     skiplist_delete(skiplist);
 
-    return el == 42;
+    return el == TO_VP(42);
 }
 
 int test_lookup_not_exsisting(){
@@ -85,13 +115,13 @@ int test_lookup_not_exsisting(){
 
     SkiplistElement el;
 
-    skiplist_put(skiplist, 42);
+    skiplist_put(skiplist, TO_VP(42));
 
-    el = skiplist_lookup(skiplist, 43);
+    el = skiplist_lookup(skiplist, TO_VP(43));
 
     skiplist_delete(skiplist);
     
-    return el == SKIPLIST_MIN_ELEMENT;
+    return el == NULL;
 }
 
 int test_remove(){
@@ -99,19 +129,19 @@ int test_remove(){
 
     SkiplistElement el;
 
-    skiplist_put(skiplist, 42);
+    skiplist_put(skiplist, TO_VP(42));
 
-    el = skiplist_lookup(skiplist, 42);
+    el = skiplist_lookup(skiplist, TO_VP(42));
 
-    assert(el == 42);
+    assert(el == TO_VP(42));
 
-    skiplist_remove(skiplist, 42);
+    skiplist_remove(skiplist, TO_VP(42));
 
-    el = skiplist_lookup(skiplist, 42);
+    el = skiplist_lookup(skiplist, TO_VP(42));
 
     skiplist_delete(skiplist);
     
-    return el == SKIPLIST_MIN_ELEMENT;
+    return el == NULL;
 }
 
 
@@ -130,7 +160,7 @@ int test_insert_lookup_delete_lookup_many(){
 
     //Create elements
     for(i = 0; i < nr_of_ops_of_each_type; i++){
-        elements[i] = rand();
+        elements[i] = TO_VP(0xFFFFFFFFFFFFFFFF & rand());
     }
 
     //Inserts
@@ -138,19 +168,26 @@ int test_insert_lookup_delete_lookup_many(){
         skiplist_put(skiplist, elements[i]);
     }
 
+    //Inserts again!
+    for(i = 0; i < nr_of_ops_of_each_type; i++){
+        assert(TO_VP(elements[i]) == skiplist_put(skiplist, elements[i]));
+    }
+
+    //print_skiplist(skiplist);
+
     //Lookups
     for(i = 0; i < nr_of_ops_of_each_type; i++){
-        assert(elements[i] == skiplist_lookup(skiplist, elements[i]));
+        assert(TO_VP(elements[i]) == skiplist_lookup(skiplist, TO_VP(elements[i])));
     }
 
     //Deletes
     for(i = 0; i < nr_of_ops_of_each_type; i++){
-        assert(elements[i] == skiplist_remove(skiplist, elements[i]));
+        assert(TO_VP(elements[i]) == skiplist_remove(skiplist, TO_VP(elements[i])));
     }
 
     //Lookup_again
     for(i = 0; i < nr_of_ops_of_each_type; i++){
-        assert(SKIPLIST_MIN_ELEMENT == skiplist_lookup(skiplist, elements[i]));
+        assert(NULL == skiplist_lookup(skiplist, TO_VP(elements[i])));
     }
 
     skiplist_delete(skiplist);
@@ -164,19 +201,19 @@ int test_first(){
     SkipList* skiplist = skiplist_new();
     SkiplistElement el;
   
-    assert(skiplist_first(skiplist) == SKIPLIST_MIN_ELEMENT);
+    assert(skiplist_first(skiplist) == NULL);
 
-    skiplist_put(skiplist, 5);
+    skiplist_put(skiplist, TO_VP(5));
 
-    skiplist_put(skiplist, 3);
+    skiplist_put(skiplist, TO_VP(3));
 
-    skiplist_put(skiplist, 6);
+    skiplist_put(skiplist, TO_VP(6));
 
     el = skiplist_first(skiplist);
     
     skiplist_delete(skiplist);
     
-    return el == 3;
+    return el == TO_VP(3);
 }
 
 int test_last(){
@@ -184,19 +221,19 @@ int test_last(){
     SkipList* skiplist = skiplist_new();    
     SkiplistElement el;
   
-    assert(skiplist_last(skiplist) == SKIPLIST_MAX_ELEMENT);
+    assert(skiplist_last(skiplist) == NULL);
 
-    skiplist_put(skiplist, 3);
+    skiplist_put(skiplist, TO_VP(3));
 
-    skiplist_put(skiplist, 6);
+    skiplist_put(skiplist, TO_VP(6));
 
-    skiplist_put(skiplist, 4);
+    skiplist_put(skiplist, TO_VP(4));
 
     el = skiplist_last(skiplist);
     
     skiplist_delete(skiplist);
     
-    return el == 6;
+    return el == TO_VP(6);
 }
 
 
@@ -206,29 +243,29 @@ int test_next(){
 
     SkiplistElement el;
 
-    skiplist_put(skiplist, 3);
+    skiplist_put(skiplist, TO_VP(3));
 
-    skiplist_put(skiplist, 6);
+    skiplist_put(skiplist, TO_VP(6));
 
-    skiplist_put(skiplist, 4);
+    skiplist_put(skiplist, TO_VP(4));
 
     el = skiplist_first(skiplist);
 
-    assert(el == 3);
+    assert(el == TO_VP(3));
 
     el = skiplist_next(skiplist, el);
 
-    assert(el == 4);
+    assert(el == TO_VP(4));
 
     el = skiplist_next(skiplist, el);
 
-    assert(el == 6);
+    assert(el == TO_VP(6));
 
     el = skiplist_next(skiplist, el);
 
     skiplist_delete(skiplist);
     
-    return el == SKIPLIST_MAX_ELEMENT;
+    return el == NULL;//SKIPLIST_MAX_ELEMENT;
 }
 
 
@@ -238,29 +275,29 @@ int test_previous(){
 
     SkiplistElement el;
 
-    skiplist_put(skiplist, 3);
+    skiplist_put(skiplist, TO_VP(3));
 
-    skiplist_put(skiplist, 6);
+    skiplist_put(skiplist, TO_VP(6));
 
-    skiplist_put(skiplist, 4);
+    skiplist_put(skiplist, TO_VP(4));
 
     el = skiplist_last(skiplist);
 
-    assert(el == 6);
+    assert(el == TO_VP(6));
 
     el = skiplist_previous(skiplist, el);
 
-    assert(el == 4);
+    assert(el == TO_VP(4));
 
     el = skiplist_previous(skiplist, el);
 
-    assert(el == 3);
+    assert(el == TO_VP(3));
 
     el = skiplist_previous(skiplist, el);
 
     skiplist_delete(skiplist);
-    
-    return el == SKIPLIST_MIN_ELEMENT;
+     
+    return el == NULL;
 }
 
 int main(int argc, char **argv){

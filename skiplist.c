@@ -9,6 +9,7 @@ static inline SkipList* create_skiplist_node(int num_of_levels,
                           sizeof(SkipList*) * (num_of_levels));
     skiplist->element = element;
     skiplist->num_of_levels = num_of_levels;
+    skiplist->info = SKIPLIST_NORMAL_NODE;
     return skiplist;
 }
 
@@ -37,6 +38,16 @@ struct find_result {
     SkipList * neigbours_after[SKIPLIST_NUM_OF_LEVELS];    
 };
 
+static inline int compare(SkipList* skiplist, SkiplistElement element){
+    if(skiplist->info & SKIPLIST_NORMAL_NODE){
+        return SKIPLIST_CMP_ELEMENTS(skiplist->element, element);
+    } else if (skiplist->info & SKIPLIST_LEFT_BORDER_NODE){
+        return -1;
+    } else {
+        return 1;
+    }
+}
+
 static inline 
 struct one_level_find_result find_neigbours_1_level(SkipList* skiplist,
                                                     SkiplistElement element,
@@ -52,7 +63,7 @@ struct one_level_find_result find_neigbours_1_level(SkipList* skiplist,
     struct one_level_find_result result;
 
     do{
-        cmp_result = SKIPLIST_CMP_ELEMENTS(skiplist_next->element, element);
+        cmp_result = compare(skiplist_next, element);
         if(GREATER == cmp_result){
             result.neigbour_before = skiplist_prev;
             result.element_skiplist = NULL;
@@ -100,18 +111,26 @@ static inline void set_next_at_level(SkipList* skiplist,
     skiplist->lower_lists[level_pos] = next_skiplist;
 }
 
+
+//BUG!!! LINK WITH TREMOVED
 inline void insert_sublist(SkipList* skiplist, 
                            struct find_result neigbours, 
                            SkipList* sublist, 
-                           int level){
-    int insert_level;
-    for(insert_level = level; insert_level < SKIPLIST_NUM_OF_LEVELS; insert_level++){
-        set_next_at_level(neigbours.neigbours_before[insert_level],
+                           int level_to_insert_from,
+                           int level_to_remove_from){
+    int link_level;
+    for(link_level = level_to_remove_from; link_level < level_to_insert_from; link_level++){
+        set_next_at_level(neigbours.neigbours_before[link_level],
+                          neigbours.neigbours_after[link_level],
+                          link_level);
+    }
+    for(link_level = level_to_insert_from; link_level < SKIPLIST_NUM_OF_LEVELS; link_level++){
+        set_next_at_level(neigbours.neigbours_before[link_level],
                           sublist,
-                          insert_level);
+                          link_level);
         set_next_at_level(sublist,
-                          neigbours.neigbours_after[insert_level],
-                          insert_level);
+                          neigbours.neigbours_after[link_level],
+                          link_level);
     }
 }
 
@@ -123,15 +142,19 @@ SkipList* skiplist_new(){
     int i;
 
     SkipList* leftmost_skiplist =
-        create_skiplist_node(SKIPLIST_NUM_OF_LEVELS, SKIPLIST_MIN_ELEMENT);
+        create_skiplist_node(SKIPLIST_NUM_OF_LEVELS, NULL);
 
     SkipList* rightmost_skiplist =
-        create_skiplist_node(SKIPLIST_NUM_OF_LEVELS, SKIPLIST_MAX_ELEMENT);
+        create_skiplist_node(SKIPLIST_NUM_OF_LEVELS, NULL);
     
     for(i = 0 ; i < SKIPLIST_NUM_OF_LEVELS ; i++){
         leftmost_skiplist->lower_lists[i] =
             rightmost_skiplist;
     }
+
+    leftmost_skiplist->info = SKIPLIST_LEFT_BORDER_NODE;
+
+    rightmost_skiplist->info = SKIPLIST_RIGHT_BORDER_NODE;
    
     return leftmost_skiplist;
 
@@ -139,17 +162,17 @@ SkipList* skiplist_new(){
 
 
 void skiplist_delete(SkipList* skiplist){
-
     SkipList* skiplist_temp = skiplist;
     SkipList* skiplist_iter = skiplist;
-    while(skiplist_iter->element != SKIPLIST_MAX_ELEMENT){
+
+    while(skiplist_iter->info & 
+          (SKIPLIST_LEFT_BORDER_NODE | SKIPLIST_NORMAL_NODE)){
         skiplist_temp = skiplist_iter;
         skiplist_iter = skiplist_iter->lower_lists[skiplist_iter->num_of_levels -1];
         free(skiplist_temp);
     }
-
-    free(skiplist_iter);
-
+    
+    free(skiplist_iter);   
 }
 
 
@@ -160,10 +183,16 @@ SkiplistElement skiplist_put(SkipList* skiplist, SkiplistElement element){
     int num_of_elements_in_insert_level = SKIPLIST_NUM_OF_LEVELS - level;
     SkipList* new_skiplist_node =
         create_skiplist_node(num_of_elements_in_insert_level, element);
-    insert_sublist(skiplist, neigbours, new_skiplist_node, level);
+    
     if(neigbours.element_skiplist == NULL){
-        return SKIPLIST_MIN_ELEMENT;
+        insert_sublist(skiplist, neigbours, new_skiplist_node, level, level);
+        return NULL;
     } else {
+        insert_sublist(skiplist, 
+                       neigbours, 
+                       new_skiplist_node, 
+                       level, 
+                       SKIPLIST_NUM_OF_LEVELS - neigbours.element_skiplist->num_of_levels);
         returnValue = neigbours.element_skiplist->element;
         free(neigbours.element_skiplist);
         return returnValue;
@@ -178,7 +207,7 @@ int skiplist_put_new(SkipList* skiplist, SkiplistElement element){
     if(neigbours.element_skiplist == NULL){
         new_skiplist_node =
             create_skiplist_node(num_of_elements_in_insert_level, element);
-        insert_sublist(skiplist, neigbours, new_skiplist_node, level);
+        insert_sublist(skiplist, neigbours, new_skiplist_node, level, level);
         return 1;
     } else {
         return 0;
@@ -191,7 +220,7 @@ SkiplistElement skiplist_remove(SkipList* skiplist, SkiplistElement element){
     int remove_level;
     int remove_from_level;
     if(neigbours.element_skiplist == NULL){
-        return SKIPLIST_MIN_ELEMENT;
+        return NULL;
     } else {
         remove_from_level = 
             SKIPLIST_NUM_OF_LEVELS - neigbours.element_skiplist->num_of_levels;
@@ -210,7 +239,7 @@ SkiplistElement skiplist_lookup(SkipList* skiplist, SkiplistElement element){
     struct find_result neigbours = find_neigbours(skiplist, element);
     SkiplistElement returnValue;
     if(neigbours.element_skiplist == NULL){
-        return SKIPLIST_MIN_ELEMENT;
+        return NULL;
     } else {
         returnValue = neigbours.element_skiplist->element;
         return returnValue;
@@ -219,12 +248,12 @@ SkiplistElement skiplist_lookup(SkipList* skiplist, SkiplistElement element){
 
 
 SkiplistElement skiplist_first(SkipList* skiplist){
-    SkiplistElement firstCandidate = 
-        skiplist->lower_lists[SKIPLIST_NUM_OF_LEVELS - 1]->element;
-    if(firstCandidate == SKIPLIST_MAX_ELEMENT){
-        return SKIPLIST_MIN_ELEMENT;
+    SkipList * firstCandidate = 
+        skiplist->lower_lists[SKIPLIST_NUM_OF_LEVELS - 1];
+    if(firstCandidate->info & SKIPLIST_RIGHT_BORDER_NODE){
+        return NULL;
     } else {
-        return firstCandidate;
+        return firstCandidate->element;
     }
 }
 
@@ -237,18 +266,18 @@ SkiplistElement skiplist_last(SkipList* skiplist){
     for(level = 0; level < SKIPLIST_NUM_OF_LEVELS; level++){
         level_pos = level - (SKIPLIST_NUM_OF_LEVELS - skiplist_iter_prev->num_of_levels);
         skiplist_iter = skiplist_iter_prev->lower_lists[level_pos];
-        while(skiplist_iter->element != SKIPLIST_MAX_ELEMENT) {
+        while(skiplist_iter->info & 
+              (SKIPLIST_LEFT_BORDER_NODE | SKIPLIST_NORMAL_NODE)) {
             skiplist_iter_prev = skiplist_iter;
             level_pos = level - (SKIPLIST_NUM_OF_LEVELS - skiplist_iter->num_of_levels);
             skiplist_iter = skiplist_iter->lower_lists[level_pos];
         }
     }
 
-    SkiplistElement lastCandidate = skiplist_iter_prev->element;
-    if(lastCandidate == SKIPLIST_MIN_ELEMENT){
-        return SKIPLIST_MAX_ELEMENT;
+    if(skiplist_iter_prev->info & SKIPLIST_LEFT_BORDER_NODE){
+        return NULL;
     } else {
-        return lastCandidate;
+        return skiplist_iter_prev->element;;
     }  
 }
 

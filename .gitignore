@@ -3,5 +3,8 @@
 *~
 TAGS
 test_skiplist
+benchmark_skiplist
 .\#
+*.dat
+*.png
 
