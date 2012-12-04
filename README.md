@@ -37,5 +37,6 @@ will be printed to standard output.
 
 ## Usage  ##
 
-The best way to see how the data-structures is currently to look in the
-file `test_skiplist.c` and `test_kvset.c`
+The best way to see how the data-structure and the framework can be
+used is currently to look in the file `test_skiplist.c` and
+`test_kvset.c`.
