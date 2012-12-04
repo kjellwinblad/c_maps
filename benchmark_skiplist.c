@@ -18,9 +18,9 @@ double benchmark_put(int num_of_operations){
 
     double time_spent;
 
-    SkipList* skiplist = skiplist_new();
+    KVSet * skiplist = new_skiplist_default();
 
-    SkiplistElement elements[num_of_operations];
+    void * elements[num_of_operations];
 
     
     srand((unsigned)time(0));
@@ -35,13 +35,13 @@ double benchmark_put(int num_of_operations){
 
     //Inserts
     for(i = 0; i < num_of_operations; i++){
-        skiplist_put(skiplist, elements[i]);
+        skiplist->funs.put(skiplist, elements[i]);
     }
 
     end = clock();
     time_spent = ((double)(end - begin));
 
-    skiplist_delete(skiplist);
+    skiplist->funs.delete(skiplist, NULL);
 
     return time_spent;
 
@@ -55,9 +55,9 @@ double benchmark_lookup(int num_of_operations){
 
     double time_spent;
 
-    SkipList* skiplist = skiplist_new();
+    KVSet * skiplist = new_skiplist_default();
 
-    SkiplistElement elements[num_of_operations];
+    void * elements[num_of_operations];
 
     
     srand((unsigned)time(0));
@@ -67,24 +67,21 @@ double benchmark_lookup(int num_of_operations){
         elements[i] = TO_VP(0xFFFFFFFFFFFFFFFF & (rand()+1));
     }
 
-
-
-
     //Inserts
     for(i = 0; i < num_of_operations; i++){
-        skiplist_put(skiplist, elements[i]);
+        skiplist->funs.put(skiplist, elements[i]);
     }
 
     begin = clock();
 
     //lookups
     for(i = 0; i < num_of_operations; i++){
-        assert(elements[i] == skiplist_lookup(skiplist, elements[i]));
+        assert(elements[i] == skiplist->funs.lookup(skiplist, elements[i]));
     }
     end = clock();
     time_spent = ((double)(end - begin));
 
-    skiplist_delete(skiplist);
+    skiplist->funs.delete(skiplist, NULL);
 
     return time_spent;
 
@@ -99,9 +96,9 @@ double benchmark_remove(int num_of_operations){
 
     double time_spent;
 
-    SkipList* skiplist = skiplist_new();
+    KVSet * skiplist = new_skiplist_default();
 
-    SkiplistElement elements[num_of_operations];
+    void * elements[num_of_operations];
 
     
     srand((unsigned)time(0));
@@ -113,19 +110,19 @@ double benchmark_remove(int num_of_operations){
 
     //Inserts
     for(i = 0; i < num_of_operations; i++){
-        skiplist_put(skiplist, elements[i]);
+        skiplist->funs.put(skiplist, elements[i]);
     }
 
     begin = clock();
 
     //Removes
     for(i = 0; i < num_of_operations; i++){
-        skiplist_remove(skiplist, elements[i]);
+        skiplist->funs.remove(skiplist, elements[i]);
     }
     end = clock();
     time_spent = ((double)(end - begin));
 
-    skiplist_delete(skiplist);
+    skiplist->funs.delete(skiplist, NULL);
 
     return time_spent;
 

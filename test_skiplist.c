@@ -25,8 +25,8 @@ void test(int success, char msg[]){
 
 }
 
-
-void print_skiplist(SkipList* skiplist){
+/*
+void print_skiplist(SkiplistNode* skiplist){
 
     int i = 0;
     int n;
@@ -48,98 +48,98 @@ void print_skiplist(SkipList* skiplist){
     printf("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
 
 }
-
+*/
 
 int test_create_and_delete(){
-    SkipList* skiplist = skiplist_new();
-    skiplist_delete(skiplist);
+    KVSet* skiplist = new_skiplist_default();
+    skiplist->funs.delete(skiplist, NULL);
     return 1;
 }
 
 int test_insert(){
-    SkipList* skiplist = skiplist_new();
+    KVSet* skiplist = new_skiplist_default();
 
-    SkiplistElement el = skiplist_put(skiplist, TO_VP(10));
+    void * el = skiplist->funs.put(skiplist, TO_VP(10));
 
-    skiplist_delete(skiplist);
+    skiplist->funs.delete(skiplist, NULL);
 
     return el == NULL;
 }
 
 int test_insert_new(){
-    SkipList* skiplist = skiplist_new();
+    KVSet* skiplist = new_skiplist_default();
               
-    int el1 = skiplist_put_new(skiplist, TO_VP(10));
-            
-    assert(skiplist_lookup(skiplist, TO_VP(10)) == TO_VP(10));
+    int el1 = skiplist->funs.put_new(skiplist, TO_VP(10));
 
-    int el2 = skiplist_put_new(skiplist, TO_VP(10));
+    assert(skiplist->funs.lookup(skiplist, TO_VP(10)) == TO_VP(10));
 
-    skiplist_delete(skiplist);
+    int el2 = skiplist->funs.put_new(skiplist, TO_VP(10));
+
+    skiplist->funs.delete(skiplist, NULL);
 
     return (el1 == 1) && (el2 == 0);
 }
 
 int test_insert_write_over(){
-    SkipList* skiplist = skiplist_new();
+    KVSet* skiplist = new_skiplist_default();
 
-    SkiplistElement el = skiplist_put(skiplist, TO_VP(10));
+    void * el = skiplist->funs.put(skiplist, TO_VP(10));
 
-    skiplist_put(skiplist, TO_VP(5));
+    skiplist->funs.put(skiplist, TO_VP(5));
 
-    skiplist_put(skiplist, TO_VP(15));
+    skiplist->funs.put(skiplist, TO_VP(15));
 
-    el = skiplist_put(skiplist, TO_VP(10));
+    el = skiplist->funs.put(skiplist, TO_VP(10));
 
-    skiplist_delete(skiplist);
+    skiplist->funs.delete(skiplist, NULL);
 
     return el == TO_VP(10);
 }
 
 int test_lookup(){
-    SkipList* skiplist = skiplist_new();
+    KVSet* skiplist = new_skiplist_default();
 
-    SkiplistElement el;
+    void * el;
 
-    skiplist_put(skiplist, TO_VP(42));
+    skiplist->funs.put(skiplist, TO_VP(42));
 
-    el = skiplist_lookup(skiplist, TO_VP(42));
-    
-    skiplist_delete(skiplist);
+    el = skiplist->funs.lookup(skiplist, TO_VP(42));
+
+    skiplist->funs.delete(skiplist, NULL);
 
     return el == TO_VP(42);
 }
 
 int test_lookup_not_exsisting(){
-    SkipList* skiplist = skiplist_new();
+    KVSet* skiplist = new_skiplist_default();
 
-    SkiplistElement el;
+    void * el;
 
-    skiplist_put(skiplist, TO_VP(42));
+    skiplist->funs.put(skiplist, TO_VP(42));
 
-    el = skiplist_lookup(skiplist, TO_VP(43));
+    el = skiplist->funs.lookup(skiplist, TO_VP(43));
 
-    skiplist_delete(skiplist);
+    skiplist->funs.delete(skiplist, NULL);
     
     return el == NULL;
 }
 
 int test_remove(){
-    SkipList* skiplist = skiplist_new();
+    KVSet* skiplist = new_skiplist_default();
 
-    SkiplistElement el;
+    void * el;
 
-    skiplist_put(skiplist, TO_VP(42));
+    skiplist->funs.put(skiplist, TO_VP(42));
 
-    el = skiplist_lookup(skiplist, TO_VP(42));
+    el = skiplist->funs.lookup(skiplist, TO_VP(42));
 
     assert(el == TO_VP(42));
 
-    skiplist_remove(skiplist, TO_VP(42));
+    skiplist->funs.remove(skiplist, TO_VP(42));
 
-    el = skiplist_lookup(skiplist, TO_VP(42));
+    el = skiplist->funs.lookup(skiplist, TO_VP(42));
 
-    skiplist_delete(skiplist);
+    skiplist->funs.delete(skiplist, NULL);
     
     return el == NULL;
 }
@@ -151,9 +151,9 @@ int test_insert_lookup_delete_lookup_many(){
 
     int nr_of_ops_of_each_type = 1024;
 
-    SkipList* skiplist = skiplist_new();
+    KVSet* skiplist = new_skiplist_default();
 
-    SkiplistElement elements[nr_of_ops_of_each_type];
+    void * elements[nr_of_ops_of_each_type];
 
     
     srand((unsigned)time(0));
@@ -165,32 +165,32 @@ int test_insert_lookup_delete_lookup_many(){
 
     //Inserts
     for(i = 0; i < nr_of_ops_of_each_type; i++){
-        skiplist_put(skiplist, elements[i]);
+        skiplist->funs.put(skiplist, elements[i]);
     }
 
     //Inserts again!
     for(i = 0; i < nr_of_ops_of_each_type; i++){
-        assert(TO_VP(elements[i]) == skiplist_put(skiplist, elements[i]));
+        assert(TO_VP(elements[i]) == skiplist->funs.put(skiplist, elements[i]));
     }
 
     //print_skiplist(skiplist);
 
     //Lookups
     for(i = 0; i < nr_of_ops_of_each_type; i++){
-        assert(TO_VP(elements[i]) == skiplist_lookup(skiplist, TO_VP(elements[i])));
+        assert(TO_VP(elements[i]) == skiplist->funs.lookup(skiplist, TO_VP(elements[i])));
     }
 
     //Deletes
     for(i = 0; i < nr_of_ops_of_each_type; i++){
-        assert(TO_VP(elements[i]) == skiplist_remove(skiplist, TO_VP(elements[i])));
+        assert(TO_VP(elements[i]) == skiplist->funs.remove(skiplist, TO_VP(elements[i])));
     }
 
     //Lookup_again
     for(i = 0; i < nr_of_ops_of_each_type; i++){
-        assert(NULL == skiplist_lookup(skiplist, TO_VP(elements[i])));
+        assert(NULL == skiplist->funs.lookup(skiplist, TO_VP(elements[i])));
     }
 
-    skiplist_delete(skiplist);
+    skiplist->funs.delete(skiplist, NULL);
     
     return 1;
 
@@ -198,40 +198,40 @@ int test_insert_lookup_delete_lookup_many(){
 
 int test_first(){
     
-    SkipList* skiplist = skiplist_new();
-    SkiplistElement el;
+    KVSet* skiplist = new_skiplist_default();
+    void * el;
   
-    assert(skiplist_first(skiplist) == NULL);
+    assert(skiplist->funs.first(skiplist) == NULL);
 
-    skiplist_put(skiplist, TO_VP(5));
+    skiplist->funs.put(skiplist, TO_VP(5));
 
-    skiplist_put(skiplist, TO_VP(3));
+    skiplist->funs.put(skiplist, TO_VP(3));
 
-    skiplist_put(skiplist, TO_VP(6));
+    skiplist->funs.put(skiplist, TO_VP(6));
 
-    el = skiplist_first(skiplist);
+    el = skiplist->funs.first(skiplist);
     
-    skiplist_delete(skiplist);
+    skiplist->funs.delete(skiplist, NULL);
     
     return el == TO_VP(3);
 }
 
 int test_last(){
     
-    SkipList* skiplist = skiplist_new();    
-    SkiplistElement el;
+    KVSet* skiplist = new_skiplist_default();
+    void * el;
   
-    assert(skiplist_last(skiplist) == NULL);
+    assert(skiplist->funs.last(skiplist) == NULL);
 
-    skiplist_put(skiplist, TO_VP(3));
+    skiplist->funs.put(skiplist, TO_VP(3));
 
-    skiplist_put(skiplist, TO_VP(6));
+    skiplist->funs.put(skiplist, TO_VP(6));
 
-    skiplist_put(skiplist, TO_VP(4));
+    skiplist->funs.put(skiplist, TO_VP(4));
 
-    el = skiplist_last(skiplist);
+    el = skiplist->funs.last(skiplist);
     
-    skiplist_delete(skiplist);
+    skiplist->funs.delete(skiplist, NULL);
     
     return el == TO_VP(6);
 }
@@ -239,65 +239,66 @@ int test_last(){
 
 
 int test_next(){
-    SkipList* skiplist = skiplist_new();
+    KVSet* skiplist = new_skiplist_default();
 
-    SkiplistElement el;
+    void * el;
 
-    skiplist_put(skiplist, TO_VP(3));
+    skiplist->funs.put(skiplist, TO_VP(3));
 
-    skiplist_put(skiplist, TO_VP(6));
+    skiplist->funs.put(skiplist, TO_VP(6));
 
-    skiplist_put(skiplist, TO_VP(4));
+    skiplist->funs.put(skiplist, TO_VP(4));
 
-    el = skiplist_first(skiplist);
+    el = skiplist->funs.first(skiplist);
 
     assert(el == TO_VP(3));
 
-    el = skiplist_next(skiplist, el);
+    el = skiplist->funs.next(skiplist, el);
 
     assert(el == TO_VP(4));
 
-    el = skiplist_next(skiplist, el);
+    el = skiplist->funs.next(skiplist, el);
 
     assert(el == TO_VP(6));
 
-    el = skiplist_next(skiplist, el);
+    el = skiplist->funs.next(skiplist, el);
 
-    skiplist_delete(skiplist);
+    skiplist->funs.delete(skiplist, NULL);
     
-    return el == NULL;//SKIPLIST_MAX_ELEMENT;
+    return el == NULL;
 }
 
 
 
 int test_previous(){
-    SkipList* skiplist = skiplist_new();
+    KVSet* skiplist = new_skiplist_default();
 
-    SkiplistElement el;
+    void * el;
 
-    skiplist_put(skiplist, TO_VP(3));
+    skiplist->funs.put(skiplist, TO_VP(3));
 
-    skiplist_put(skiplist, TO_VP(6));
+    skiplist->funs.put(skiplist, TO_VP(6));
 
-    skiplist_put(skiplist, TO_VP(4));
+    skiplist->funs.put(skiplist, TO_VP(4));
 
-    el = skiplist_last(skiplist);
+    el = skiplist->funs.last(skiplist);
 
     assert(el == TO_VP(6));
 
-    el = skiplist_previous(skiplist, el);
+    el = skiplist->funs.previous(skiplist, el);
 
     assert(el == TO_VP(4));
 
-    el = skiplist_previous(skiplist, el);
+    el = skiplist->funs.previous(skiplist, el);
 
     assert(el == TO_VP(3));
 
-    el = skiplist_previous(skiplist, el);
+    el = skiplist->funs.previous(skiplist, el);
 
-    skiplist_delete(skiplist);
-     
+    skiplist->funs.delete(skiplist, NULL);
+    
     return el == NULL;
+
 }
 
 int main(int argc, char **argv){
