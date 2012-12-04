@@ -1,7 +1,7 @@
 
 CC = gcc
 CFLAGS = -I. -O3 -Wall -g
-TEST_OBJECTS = test_skiplist.o skiplist.o
+TEST_OBJECTS = test_skiplist.o test_kvset.o  skiplist.o 
 BENCHMARK_OBJECTS = benchmark_skiplist.o skiplist.o
 LIBS =
 
@@ -21,13 +21,16 @@ run_benchmark_skiplist: benchmark_skiplist
 	cd benchmark ; \
 	gnuplot < plot_bench.gp
 
-test_skiplist.o: test_skiplist.c skiplist.o
+test_kvset.o: test_kvset.c test_kvset.h kvset.h
+	$(CC) $(CFLAGS) -c test_kvset.c
+
+test_skiplist.o: test_skiplist.c skiplist.o test_kvset.o
 	$(CC) $(CFLAGS) -c test_skiplist.c
 
-benchmark_skiplist.o: benchmark_skiplist.c skiplist.o
+benchmark_skiplist.o: benchmark_skiplist.c skiplist.o kvset.h
 	$(CC) $(CFLAGS) -c benchmark_skiplist.c
 
-skiplist.o: skiplist.c skiplist.h
+skiplist.o: skiplist.c skiplist.h kvset.h
 	$(CC) $(CFLAGS) -c skiplist.c 
 
 clean:

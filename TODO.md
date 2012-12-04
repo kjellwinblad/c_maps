@@ -6,6 +6,6 @@ TODO
 3. **DONE** Better programming interface
    1. **DONE** Add "constructor" that takes a comparission function
    2. **DONE** Include "method table" in the data structure
-4. Implement general test so other data types with the same interface can use it
+4. **DONE** Implement general test so other data types with the same interface can use it
 5. Implement concurrent version of the linked list
-6. Add interface so the implementation can easily be changed
+
