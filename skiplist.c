@@ -8,7 +8,6 @@
  * ========================
  */
 
-#define SKIPLIST_CMP_ELEMENTS(E1, E2) (E1 > E2 ? 1 : (E1 < E2 ? -1 : 0))
 
 #define SKIPLIST_NUM_OF_LEVELS 30
 
@@ -26,16 +25,17 @@ typedef struct skiplist_node {
 } SkiplistNode;
 
 typedef struct skiplist {
-    int (*compare)(void *, void *);
+    int (*compare)(void *, void *, int);
     void (*free)(void *);
     void *(*malloc)(size_t size);
+    int key_position;
     SkiplistNode head_node;
 } Skiplist;
 
 struct one_level_find_result {
     SkiplistNode * neigbour_before;
     SkiplistNode * element_skiplist;
-    SkiplistNode * neigbour_after;    
+    SkiplistNode * neigbour_after;
 };
 
 struct find_result {
@@ -78,9 +78,12 @@ int random_level(int num_of_levels){
 }
 
 static inline 
-int compare(SkiplistNode* skiplist, void * element){
+int compare(SkiplistNode* skiplist,
+            void * element, 
+            int (*compare_function)(void *, void *, int), 
+            int key_position){
     if(skiplist->info & SKIPLIST_NORMAL_NODE){
-        return SKIPLIST_CMP_ELEMENTS(skiplist->element, element);
+        return compare_function(skiplist->element, element, key_position);
     } else if (skiplist->info & SKIPLIST_LEFT_BORDER_NODE){
         return -1;
     } else {
@@ -91,7 +94,9 @@ int compare(SkiplistNode* skiplist, void * element){
 static inline 
 struct one_level_find_result find_neigbours_1_level(SkiplistNode* skiplist,
                                                     void * element,
-                                                    int level){
+                                                    int level,
+                                                    int (*compare_function)(void *, void *, int),
+                                                    int key_position){
 #define SMALLER -1
 #define EQUAL 0
 #define GREATER 1
@@ -103,7 +108,7 @@ struct one_level_find_result find_neigbours_1_level(SkiplistNode* skiplist,
     struct one_level_find_result result;
 
     do{
-        cmp_result = compare(skiplist_next, element);
+        cmp_result = compare(skiplist_next, element, compare_function, key_position);
         if(GREATER == cmp_result){
             result.neigbour_before = skiplist_prev;
             result.element_skiplist = NULL;
@@ -126,14 +131,21 @@ struct one_level_find_result find_neigbours_1_level(SkiplistNode* skiplist,
 
 static inline 
 struct find_result find_neigbours(SkiplistNode* skiplist,
-                                  void * element){
+                                  void * element,
+                                  int (*compare_function)(void *, void *, int),
+                                  int key_position){
     int level;
     struct find_result result;
     struct one_level_find_result level_result;
     SkiplistNode* neigbour_before_iter = skiplist;
 
     for(level = 0; level < SKIPLIST_NUM_OF_LEVELS; level++){
-        level_result = find_neigbours_1_level(neigbour_before_iter, element, level);
+        level_result = 
+            find_neigbours_1_level(neigbour_before_iter, 
+                                   element, 
+                                   level, 
+                                   compare_function, 
+                                   key_position);
         result.neigbours_before[level] = level_result.neigbour_before;
         result.neigbours_after[level] = level_result.neigbour_after;
         neigbour_before_iter = level_result.neigbour_before;
@@ -175,7 +187,7 @@ void insert_sublist(SkiplistNode* skiplist,
 }
 
 static
-int default_compare_function(void * e1, void * e2){
+int default_compare_function(void * e1, void * e2, int key_position){
     return (e1 > e2 ? 1 : (e1 < e2 ? -1 : 0));
 }
 
@@ -213,7 +225,10 @@ void * skiplist_put(KVSet* kv_set, void * key){
     SkiplistNode * head_node = &(skiplist->head_node);
 
     void * returnValue;
-    struct find_result neigbours = find_neigbours(head_node, key);
+    struct find_result neigbours = find_neigbours(head_node, 
+                                                  key, 
+                                                  skiplist->compare,
+                                                  skiplist->key_position);
     int level = random_level(head_node->num_of_levels);
     int num_of_elements_in_insert_level = head_node->num_of_levels - level;
     SkiplistNode* new_skiplist_node =
@@ -240,7 +255,7 @@ int skiplist_put_new(KVSet* kv_set, void * key){
     Skiplist * skiplist = (Skiplist *) &(kv_set->type_specific_data);
     SkiplistNode * head_node = &(skiplist->head_node);
 
-    struct find_result neigbours = find_neigbours(head_node, key);
+    struct find_result neigbours = find_neigbours(head_node, key, skiplist->compare, skiplist->key_position);
     int level = random_level(head_node->num_of_levels);
     int num_of_elements_in_insert_level = head_node->num_of_levels - level;
     SkiplistNode* new_skiplist_node;
@@ -260,7 +275,9 @@ void * skiplist_remove(KVSet* kv_set, void * key){
     Skiplist * skiplist = (Skiplist *) &(kv_set->type_specific_data);
     SkiplistNode * head_node = &(skiplist->head_node);
 
-    struct find_result neigbours = find_neigbours(head_node, key);
+    struct find_result neigbours = find_neigbours(head_node,
+                                                  key, skiplist->compare,
+                                                  skiplist->key_position);
     void * returnValue;
     int remove_level;
     int remove_from_level;
@@ -286,7 +303,10 @@ void * skiplist_lookup(KVSet* kv_set, void * key){
     Skiplist * skiplist = (Skiplist *) &(kv_set->type_specific_data);
     SkiplistNode * head_node = &(skiplist->head_node);
 
-    struct find_result neigbours = find_neigbours(head_node, key);
+    struct find_result neigbours = find_neigbours(head_node, 
+                                                  key, 
+                                                  skiplist->compare, 
+                                                  skiplist->key_position);
     void * returnValue;
     if(neigbours.element_skiplist == NULL){
         return NULL;
@@ -301,7 +321,10 @@ int member(KVSet * kv_set, void * key){
     Skiplist * skiplist = (Skiplist *) &(kv_set->type_specific_data);
     SkiplistNode * head_node = &(skiplist->head_node);
 
-    struct find_result neigbours = find_neigbours(head_node, key);
+    struct find_result neigbours = find_neigbours(head_node, 
+                                                  key, 
+                                                  skiplist->compare, 
+                                                  skiplist->key_position);
 
     return neigbours.element_skiplist != NULL;
 }
@@ -357,17 +380,23 @@ void * skiplist_next(KVSet* kv_set, void * key){
     Skiplist * skiplist = (Skiplist *) &(kv_set->type_specific_data);
     SkiplistNode * head_node = &(skiplist->head_node);
 
-    struct find_result neigbours = find_neigbours(head_node, key);
+    struct find_result neigbours = find_neigbours(head_node, 
+                                                  key, 
+                                                  skiplist->compare, 
+                                                  skiplist->key_position);
     return neigbours.neigbours_after[SKIPLIST_NUM_OF_LEVELS-1]->element;
 }
 
 static
 void * skiplist_previous(KVSet* kv_set, void * key){
 
-    Skiplist * skiplista = (Skiplist *) &(kv_set->type_specific_data);
-    SkiplistNode * head_node = &(skiplista->head_node);
+    Skiplist * skiplist = (Skiplist *) &(kv_set->type_specific_data);
+    SkiplistNode * head_node = &(skiplist->head_node);
 
-    struct find_result neigbours = find_neigbours(head_node, key);
+    struct find_result neigbours = find_neigbours(head_node, 
+                                                  key, 
+                                                  skiplist->compare, 
+                                                  skiplist->key_position);
     return neigbours.neigbours_before[SKIPLIST_NUM_OF_LEVELS-1]->element;
 }
 
@@ -378,9 +407,10 @@ void * skiplist_previous(KVSet* kv_set, void * key){
  * Public interface
  *=================
  */
-KVSet * new_skiplist(int (*compare_function)(void *, void *), 
+KVSet * new_skiplist(int (*compare_function)(void *, void *, int), 
                      void (*free_function)(void *),
-                     void *(*malloc_function)(size_t)){
+                     void *(*malloc_function)(size_t),
+                     int key_position){
     int i;
 
     KVSet* kv_set = 
@@ -408,6 +438,7 @@ KVSet * new_skiplist(int (*compare_function)(void *, void *),
     skiplist->compare = compare_function;
     skiplist->free = free_function;
     skiplist->malloc = malloc_function;
+    skiplist->key_position = key_position;
 
     SkiplistNode* rightmost_skiplist =
         create_skiplist_node(SKIPLIST_NUM_OF_LEVELS, NULL, skiplist->malloc);
@@ -432,5 +463,6 @@ KVSet * new_skiplist(int (*compare_function)(void *, void *),
 KVSet * new_skiplist_default(){
     return new_skiplist(default_compare_function, 
                         free,
-                        malloc);
+                        malloc,
+                        0);
 }
