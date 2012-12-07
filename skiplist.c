@@ -97,9 +97,6 @@ struct one_level_find_result find_neigbours_1_level(SkiplistNode* skiplist,
                                                     int level,
                                                     int (*compare_function)(void *, void *, int),
                                                     int key_position){
-#define SMALLER -1
-#define EQUAL 0
-#define GREATER 1
 
     int cmp_result;
     SkiplistNode* skiplist_prev = skiplist;
@@ -109,11 +106,11 @@ struct one_level_find_result find_neigbours_1_level(SkiplistNode* skiplist,
 
     do{
         cmp_result = compare(skiplist_next, element, compare_function, key_position);
-        if(GREATER == cmp_result){
+        if(0 < cmp_result){
             result.neigbour_before = skiplist_prev;
             result.element_skiplist = NULL;
             result.neigbour_after = skiplist_next;
-        } else if(EQUAL == cmp_result){
+        } else if(0 == cmp_result){
             level_pos = level - (SKIPLIST_NUM_OF_LEVELS - skiplist_next->num_of_levels);
             result.neigbour_before = skiplist_prev;
             result.element_skiplist = skiplist_next;
@@ -123,7 +120,7 @@ struct one_level_find_result find_neigbours_1_level(SkiplistNode* skiplist,
             skiplist_prev = skiplist_next;
             skiplist_next = skiplist_next->lower_lists[level_pos];
         }
-    } while(SMALLER == cmp_result);
+    } while(0 > cmp_result);
 
     return result;
 
