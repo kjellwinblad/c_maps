@@ -48,7 +48,7 @@ double benchmark_put(KVSet * (*create_kvset_fun)(), int num_of_operations){
     end = clock();
     time_spent = ((double)(end - begin));
 
-    skiplist->funs.delete(skiplist, NULL);
+    skiplist->funs.delete_table(skiplist, NULL);
 
     return time_spent;
 
@@ -88,7 +88,7 @@ double benchmark_lookup(KVSet * (*create_kvset_fun)(), int num_of_operations){
     end = clock();
     time_spent = ((double)(end - begin));
 
-    skiplist->funs.delete(skiplist, NULL);
+    skiplist->funs.delete_table(skiplist, NULL);
 
     return time_spent;
 
@@ -129,7 +129,7 @@ double benchmark_remove(KVSet * (*create_kvset_fun)(), int num_of_operations){
     end = clock();
     time_spent = ((double)(end - begin));
 
-    skiplist->funs.delete(skiplist, NULL);
+    skiplist->funs.delete_table(skiplist, NULL);
 
     return time_spent;
 

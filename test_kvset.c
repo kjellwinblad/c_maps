@@ -33,7 +33,7 @@ void test(int success, char msg[]){
 
 int test_create_and_delete(KVSet * (*create_kvset_fun)()){
     KVSet* skiplist = create_kvset_fun();
-    skiplist->funs.delete(skiplist, NULL);
+    skiplist->funs.delete_table(skiplist, NULL);
     return 1;
 }
 
@@ -42,7 +42,7 @@ int test_insert(KVSet * (*create_kvset_fun)()){
 
     void * el = skiplist->funs.put(skiplist, TO_VP(10));
 
-    skiplist->funs.delete(skiplist, NULL);
+    skiplist->funs.delete_table(skiplist, NULL);
 
     return el == NULL;
 }
@@ -56,7 +56,7 @@ int test_insert_new(KVSet * (*create_kvset_fun)()){
 
     int el2 = skiplist->funs.put_new(skiplist, TO_VP(10));
 
-    skiplist->funs.delete(skiplist, NULL);
+    skiplist->funs.delete_table(skiplist, NULL);
 
     return (el1 == 1) && (el2 == 0);
 }
@@ -72,7 +72,7 @@ int test_insert_write_over(KVSet * (*create_kvset_fun)()){
 
     el = skiplist->funs.put(skiplist, TO_VP(10));
 
-    skiplist->funs.delete(skiplist, NULL);
+    skiplist->funs.delete_table(skiplist, NULL);
 
     return el == TO_VP(10);
 }
@@ -86,7 +86,7 @@ int test_lookup(KVSet * (*create_kvset_fun)()){
 
     el = skiplist->funs.lookup(skiplist, TO_VP(42));
 
-    skiplist->funs.delete(skiplist, NULL);
+    skiplist->funs.delete_table(skiplist, NULL);
 
     return el == TO_VP(42);
 }
@@ -100,7 +100,7 @@ int test_lookup_not_exsisting(KVSet * (*create_kvset_fun)()){
 
     el = skiplist->funs.lookup(skiplist, TO_VP(43));
 
-    skiplist->funs.delete(skiplist, NULL);
+    skiplist->funs.delete_table(skiplist, NULL);
     
     return el == NULL;
 }
@@ -120,7 +120,7 @@ int test_remove(KVSet * (*create_kvset_fun)()){
 
     el = skiplist->funs.lookup(skiplist, TO_VP(42));
 
-    skiplist->funs.delete(skiplist, NULL);
+    skiplist->funs.delete_table(skiplist, NULL);
     
     return el == NULL;
 }
@@ -171,7 +171,7 @@ int test_insert_lookup_delete_lookup_many(KVSet * (*create_kvset_fun)()){
         assert(NULL == skiplist->funs.lookup(skiplist, TO_VP(elements[i])));
     }
 
-    skiplist->funs.delete(skiplist, NULL);
+    skiplist->funs.delete_table(skiplist, NULL);
     
     return 1;
 
@@ -192,7 +192,7 @@ int test_first(KVSet * (*create_kvset_fun)()){
 
     el = skiplist->funs.first(skiplist);
     
-    skiplist->funs.delete(skiplist, NULL);
+    skiplist->funs.delete_table(skiplist, NULL);
     
     return el == TO_VP(3);
 }
@@ -212,7 +212,7 @@ int test_last(KVSet * (*create_kvset_fun)()){
 
     el = skiplist->funs.last(skiplist);
     
-    skiplist->funs.delete(skiplist, NULL);
+    skiplist->funs.delete_table(skiplist, NULL);
     
     return el == TO_VP(6);
 }
@@ -244,7 +244,7 @@ int test_next(KVSet * (*create_kvset_fun)()){
 
     el = skiplist->funs.next(skiplist, el);
 
-    skiplist->funs.delete(skiplist, NULL);
+    skiplist->funs.delete_table(skiplist, NULL);
     
     return el == NULL;
 }
@@ -276,7 +276,7 @@ int test_previous(KVSet * (*create_kvset_fun)()){
 
     el = skiplist->funs.previous(skiplist, el);
 
-    skiplist->funs.delete(skiplist, NULL);
+    skiplist->funs.delete_table(skiplist, NULL);
     
     return el == NULL;
 
