@@ -40,7 +40,7 @@ int test_create_and_delete(KVSet * (*create_kvset_fun)()){
 int test_insert(KVSet * (*create_kvset_fun)()){
     KVSet* skiplist = create_kvset_fun();
 
-    void * el = skiplist->funs.put(skiplist, TO_VP(10));
+    void * el = skiplist->funs.put(skiplist, TO_VP(10), 0);
 
     skiplist->funs.delete_table(skiplist, NULL);
 
@@ -50,11 +50,11 @@ int test_insert(KVSet * (*create_kvset_fun)()){
 int test_insert_new(KVSet * (*create_kvset_fun)()){
     KVSet* skiplist = create_kvset_fun();
               
-    int el1 = skiplist->funs.put_new(skiplist, TO_VP(10));
+    int el1 = skiplist->funs.put_new(skiplist, TO_VP(10), 0);
 
     assert(skiplist->funs.lookup(skiplist, TO_VP(10)) == TO_VP(10));
 
-    int el2 = skiplist->funs.put_new(skiplist, TO_VP(10));
+    int el2 = skiplist->funs.put_new(skiplist, TO_VP(10), 0);
 
     skiplist->funs.delete_table(skiplist, NULL);
 
@@ -64,13 +64,13 @@ int test_insert_new(KVSet * (*create_kvset_fun)()){
 int test_insert_write_over(KVSet * (*create_kvset_fun)()){
     KVSet* skiplist = create_kvset_fun();
 
-    void * el = skiplist->funs.put(skiplist, TO_VP(10));
+    void * el = skiplist->funs.put(skiplist, TO_VP(10), 0);
 
-    skiplist->funs.put(skiplist, TO_VP(5));
+    skiplist->funs.put(skiplist, TO_VP(5), 0);
 
-    skiplist->funs.put(skiplist, TO_VP(15));
+    skiplist->funs.put(skiplist, TO_VP(15), 0);
 
-    el = skiplist->funs.put(skiplist, TO_VP(10));
+    el = skiplist->funs.put(skiplist, TO_VP(10), 0);
 
     skiplist->funs.delete_table(skiplist, NULL);
 
@@ -82,7 +82,7 @@ int test_lookup(KVSet * (*create_kvset_fun)()){
 
     void * el;
 
-    skiplist->funs.put(skiplist, TO_VP(42));
+    skiplist->funs.put(skiplist, TO_VP(42), 0);
 
     el = skiplist->funs.lookup(skiplist, TO_VP(42));
 
@@ -96,7 +96,7 @@ int test_lookup_not_exsisting(KVSet * (*create_kvset_fun)()){
 
     void * el;
 
-    skiplist->funs.put(skiplist, TO_VP(42));
+    skiplist->funs.put(skiplist, TO_VP(42), 0);
 
     el = skiplist->funs.lookup(skiplist, TO_VP(43));
 
@@ -110,7 +110,7 @@ int test_remove(KVSet * (*create_kvset_fun)()){
 
     void * el;
 
-    skiplist->funs.put(skiplist, TO_VP(42));
+    skiplist->funs.put(skiplist, TO_VP(42), 0);
 
     el = skiplist->funs.lookup(skiplist, TO_VP(42));
 
@@ -146,12 +146,12 @@ int test_insert_lookup_delete_lookup_many(KVSet * (*create_kvset_fun)()){
 
     //Inserts
     for(i = 0; i < nr_of_ops_of_each_type; i++){
-        skiplist->funs.put(skiplist, elements[i]);
+        skiplist->funs.put(skiplist, elements[i], 0);
     }
 
     //Inserts again!
     for(i = 0; i < nr_of_ops_of_each_type; i++){
-        assert(TO_VP(elements[i]) == skiplist->funs.put(skiplist, elements[i]));
+        assert(TO_VP(elements[i]) == skiplist->funs.put(skiplist, elements[i], 0));
     }
 
     //print_skiplist(skiplist);
@@ -184,11 +184,11 @@ int test_first(KVSet * (*create_kvset_fun)()){
   
     assert(skiplist->funs.first(skiplist) == NULL);
 
-    skiplist->funs.put(skiplist, TO_VP(5));
+    skiplist->funs.put(skiplist, TO_VP(5), 0);
 
-    skiplist->funs.put(skiplist, TO_VP(3));
+    skiplist->funs.put(skiplist, TO_VP(3), 0);
 
-    skiplist->funs.put(skiplist, TO_VP(6));
+    skiplist->funs.put(skiplist, TO_VP(6), 0);
 
     el = skiplist->funs.first(skiplist);
     
@@ -204,11 +204,11 @@ int test_last(KVSet * (*create_kvset_fun)()){
   
     assert(skiplist->funs.last(skiplist) == NULL);
 
-    skiplist->funs.put(skiplist, TO_VP(3));
+    skiplist->funs.put(skiplist, TO_VP(3), 0);
 
-    skiplist->funs.put(skiplist, TO_VP(6));
+    skiplist->funs.put(skiplist, TO_VP(6), 0);
 
-    skiplist->funs.put(skiplist, TO_VP(4));
+    skiplist->funs.put(skiplist, TO_VP(4), 0);
 
     el = skiplist->funs.last(skiplist);
     
@@ -224,11 +224,11 @@ int test_next(KVSet * (*create_kvset_fun)()){
 
     void * el;
 
-    skiplist->funs.put(skiplist, TO_VP(3));
+    skiplist->funs.put(skiplist, TO_VP(3), 0);
 
-    skiplist->funs.put(skiplist, TO_VP(6));
+    skiplist->funs.put(skiplist, TO_VP(6), 0);
 
-    skiplist->funs.put(skiplist, TO_VP(4));
+    skiplist->funs.put(skiplist, TO_VP(4), 0);
 
     el = skiplist->funs.first(skiplist);
 
@@ -256,11 +256,11 @@ int test_previous(KVSet * (*create_kvset_fun)()){
 
     void * el;
 
-    skiplist->funs.put(skiplist, TO_VP(3));
+    skiplist->funs.put(skiplist, TO_VP(3), 0);
 
-    skiplist->funs.put(skiplist, TO_VP(6));
+    skiplist->funs.put(skiplist, TO_VP(6), 0);
 
-    skiplist->funs.put(skiplist, TO_VP(4));
+    skiplist->funs.put(skiplist, TO_VP(4), 0);
 
     el = skiplist->funs.last(skiplist);
 

@@ -216,11 +216,11 @@ void skiplist_delete(KVSet* kv_set, void (*element_free_function)(void *)){
 }
 
 static
-void * skiplist_put(KVSet* kv_set, void * key){
+void * skiplist_put(KVSet* kv_set, void * key_value, int key_offset){
 
     Skiplist * skiplist = (Skiplist *) &(kv_set->type_specific_data);
     SkiplistNode * head_node = &(skiplist->head_node);
-
+    void * key = key_value + key_offset;
     void * returnValue;
     struct find_result neigbours = find_neigbours(head_node, 
                                                   key, 
@@ -229,7 +229,7 @@ void * skiplist_put(KVSet* kv_set, void * key){
     int level = random_level(head_node->num_of_levels);
     int num_of_elements_in_insert_level = head_node->num_of_levels - level;
     SkiplistNode* new_skiplist_node =
-        create_skiplist_node(num_of_elements_in_insert_level, key, skiplist->malloc);
+        create_skiplist_node(num_of_elements_in_insert_level, key_value, skiplist->malloc);
     
     if(neigbours.element_skiplist == NULL){
         insert_sublist(head_node, neigbours, new_skiplist_node, level, level);
@@ -247,18 +247,18 @@ void * skiplist_put(KVSet* kv_set, void * key){
 }
 
 static
-int skiplist_put_new(KVSet* kv_set, void * key){
+int skiplist_put_new(KVSet* kv_set, void * key_value, int key_offset){
 
     Skiplist * skiplist = (Skiplist *) &(kv_set->type_specific_data);
     SkiplistNode * head_node = &(skiplist->head_node);
-
+    void * key = key_value + key_offset;
     struct find_result neigbours = find_neigbours(head_node, key, skiplist->compare, skiplist->key_position);
     int level = random_level(head_node->num_of_levels);
     int num_of_elements_in_insert_level = head_node->num_of_levels - level;
     SkiplistNode* new_skiplist_node;
     if(neigbours.element_skiplist == NULL){
         new_skiplist_node =
-            create_skiplist_node(num_of_elements_in_insert_level, key, skiplist->malloc);
+            create_skiplist_node(num_of_elements_in_insert_level, key_value, skiplist->malloc);
         insert_sublist(head_node, neigbours, new_skiplist_node, level, level);
         return 1;
     } else {
