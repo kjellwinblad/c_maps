@@ -42,7 +42,7 @@ double benchmark_put(KVSet * (*create_kvset_fun)(), int num_of_operations){
 
     //Inserts
     for(i = 0; i < num_of_operations; i++){
-        skiplist->funs.put(skiplist, elements[i], 0);
+        skiplist->funs.put(skiplist, elements[i]);
     }
 
     end = clock();
@@ -76,7 +76,7 @@ double benchmark_lookup(KVSet * (*create_kvset_fun)(), int num_of_operations){
 
     //Inserts
     for(i = 0; i < num_of_operations; i++){
-        skiplist->funs.put(skiplist, elements[i], 0);
+        skiplist->funs.put(skiplist, elements[i]);
     }
 
     begin = clock();
@@ -117,7 +117,7 @@ double benchmark_remove(KVSet * (*create_kvset_fun)(), int num_of_operations){
 
     //Inserts
     for(i = 0; i < num_of_operations; i++){
-        skiplist->funs.put(skiplist, elements[i], 0);
+        skiplist->funs.put(skiplist, elements[i]);
     }
 
     begin = clock();

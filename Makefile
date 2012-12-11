@@ -1,6 +1,6 @@
 
 CC = gcc
-CFLAGS = -I. -O3 -Wall -g
+CFLAGS = -I. -O1 -Wall -g -Wdeclaration-after-statement
 TEST_OBJECTS = test_skiplist.o test_kvset.o  skiplist.o 
 BENCHMARK_SKIPLIST_OBJECTS = benchmark_skiplist.o skiplist.o benchmark_kvset.o
 LIBS =

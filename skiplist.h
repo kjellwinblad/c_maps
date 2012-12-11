@@ -4,11 +4,11 @@
 #include "kvset.h"
 #include "stdlib.h"
 
-KVSet * new_skiplist(int (*compare_function)(void *, void *, int), 
+KVSet * new_skiplist(int (*compare_function)(void *, void *), 
                      void (*free_function)(void *),
                      void *(*malloc_function)(size_t),
-                     int key_pos); 
+                     unsigned int key_offset); 
 
-KVSet * new_skiplist_default();
+KVSet * new_skiplist_default(void);
 
 #endif
