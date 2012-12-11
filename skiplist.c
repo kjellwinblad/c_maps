@@ -193,7 +193,9 @@ int default_compare_function(void * e1, void * e2, int key_position){
  */
 
 static
-void skiplist_delete(KVSet* kv_set, void (*element_free_function)(void *)){
+void skiplist_delete(KVSet* kv_set,
+                     void (*element_free_function)(void *context, void* element),
+                     void * context){
     
     Skiplist * skiplist = (Skiplist *) &(kv_set->type_specific_data);
     SkiplistNode * head_node = &(skiplist->head_node);
@@ -204,8 +206,8 @@ void skiplist_delete(KVSet* kv_set, void (*element_free_function)(void *)){
     while(node_iter->info &  SKIPLIST_NORMAL_NODE){
         node_temp = node_iter;
         node_iter = node_iter->lower_lists[node_iter->num_of_levels -1];
-        if(element_free_function != NULL){
-            element_free_function(node_temp->element);
+        if(NULL != element_free_function){
+            element_free_function(context, node_temp->element);
         }
         skiplist->free(node_temp);
     }

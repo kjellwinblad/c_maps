@@ -5,7 +5,9 @@ typedef struct kv_set KVSet;
 
 typedef struct kv_set_functions
 {   
-    void (*delete_table)(KVSet * set, void (*element_free_function)(void *));
+    void (*delete_table)(KVSet* kv_set,
+                         void (*element_free_function)(void *context, void* element),
+                         void * context);
     void * (*put)(KVSet * set, void * key_value, int key_offset);
     int (*put_new)(KVSet * set, void * key_value, int key_offset);
     void * (*remove)(KVSet * set, void * key);
