@@ -27,4 +27,7 @@ typedef struct kv_set
     void * type_specific_data;
 } KVSet;
 
+void kvset_init_thread(int id);
+void kvset_init();
+
 #endif

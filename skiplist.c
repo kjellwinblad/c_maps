@@ -465,3 +465,12 @@ KVSet * new_skiplist_default(){
                         malloc,
                         0);
 }
+
+
+void kvset_init_thread(int id){
+
+}
+
+void kvset_init(){
+
+}

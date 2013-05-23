@@ -4,7 +4,11 @@
 #include "stdlib.h"
 #include "time.h"
 #include "assert.h"
+#include "pthread.h"
 
+#define NUMBER_OF_THREADS 6
+#define NUMBER_OF_ACCESSES_PER__THREAD 1000000
+#define KEY_RANGE 100000
 
 /*
  * ==================
@@ -49,12 +53,14 @@ int test_insert(KVSet * (*create_kvset_fun)()){
 
 int test_insert_new(KVSet * (*create_kvset_fun)()){
     KVSet* skiplist = create_kvset_fun();
-              
+    
+    int el2;
+          
     int el1 = skiplist->funs.put_new(skiplist, TO_VP(10));
 
     assert(skiplist->funs.lookup(skiplist, TO_VP(10)) == TO_VP(10));
 
-    int el2 = skiplist->funs.put_new(skiplist, TO_VP(10));
+    el2 = skiplist->funs.put_new(skiplist, TO_VP(10));
 
     skiplist->funs.delete_table(skiplist, NULL, NULL);
 
@@ -282,23 +288,77 @@ int test_previous(KVSet * (*create_kvset_fun)()){
 
 }
 
+KVSet* global_skiplist;
+
+void * test_concurrent_insert_thread(void * x){
+    int i;
+    long key;
+    unsigned short * xsubi = (unsigned short *)x;
+    kvset_init_thread(pthread_self());
+    for(i = 0; i < NUMBER_OF_ACCESSES_PER__THREAD; i++){
+        key = 1+KEY_RANGE*2 + jrand48(xsubi)%KEY_RANGE;
+        if(key!=0)
+            global_skiplist->funs.put(global_skiplist,TO_VP(key));
+        //printf("%d\n",i);
+    }
+    return NULL;
+}
+
+int test_concurrent_insert(KVSet * (*create_kvset_fun)()){
+    int i;
+    unsigned short xsubis[64*NUMBER_OF_THREADS]; 
+    unsigned short * xsubiTmp;
+    unsigned short * xsubi;
+    pthread_t threads[NUMBER_OF_THREADS];
+    global_skiplist = create_kvset_fun();
+    for(i = 0; i < NUMBER_OF_THREADS; i++){
+        xsubi = &xsubis[64*i];
+        srand48(i);
+        xsubiTmp = seed48(xsubi);
+        xsubi[0] = xsubiTmp[0];
+        xsubi[1] = xsubiTmp[1];
+        xsubi[2] = xsubiTmp[2];
+        pthread_create(&threads[i],NULL,&test_concurrent_insert_thread,xsubi);
+    }
+    for(i = 0; i < NUMBER_OF_THREADS; i++){
+        pthread_join(threads[i], NULL);
+    }
+    global_skiplist->funs.delete_table(global_skiplist, NULL, NULL);
+    return 1;
+}
+
+int concurrent_insert_remove(KVSet * (*create_kvset_fun)()){
+    KVSet* skiplist = create_kvset_fun();
+    skiplist->funs.delete_table(skiplist, NULL, NULL);
+    return 1;
+}
+
+int test_concurrent_insert_remove_lookup(KVSet * (*create_kvset_fun)()){
+    KVSet* skiplist = create_kvset_fun();
+    skiplist->funs.delete_table(skiplist, NULL, NULL);
+    return 1;
+}
+
+
+
 /*
  * ================
  * Public interface
  * ================
  */
 void test_general_kvset_properties(KVSet * (*create_kvset_fun)()){
-
+    kvset_init();
+    kvset_init_thread(1);
     printf("\033[32m -- STARTING GENERAL PROPERTIES TESTS! -- \033[m\n");
 
-    T(test_create_and_delete(create_kvset_fun), "test_create_and_delete()");
-    T(test_insert(create_kvset_fun), "test_insert()");   
-    T(test_insert_write_over(create_kvset_fun), "test_insert_write_over()");
-    T(test_lookup(create_kvset_fun), "test_lookup()");
-    T(test_lookup_not_exsisting(create_kvset_fun), "test_lookup_not_exsisting()");
-    T(test_remove(create_kvset_fun), "test_remove()");
-    T(test_insert_lookup_delete_lookup_many(create_kvset_fun), "test_insert_lookup_delete_lookup_many()");
-    T(test_insert_new(create_kvset_fun), "test_insert_new()");
+    /* T(test_create_and_delete(create_kvset_fun), "test_create_and_delete()"); */
+    /* T(test_insert(create_kvset_fun), "test_insert()");    */
+    /* T(test_insert_write_over(create_kvset_fun), "test_insert_write_over()"); */
+    /* T(test_lookup(create_kvset_fun), "test_lookup()"); */
+    /* T(test_lookup_not_exsisting(create_kvset_fun), "test_lookup_not_exsisting()"); */
+    /* T(test_remove(create_kvset_fun), "test_remove()"); */
+    /* T(test_insert_lookup_delete_lookup_many(create_kvset_fun), "test_insert_lookup_delete_lookup_many()"); */
+    /* T(test_insert_new(create_kvset_fun), "test_insert_new()"); */
 
     printf("\033[32m -- GENERAL PROPERTIES TESTS COMPLETED! -- \033[m\n");  
 
@@ -307,12 +367,23 @@ void test_general_kvset_properties(KVSet * (*create_kvset_fun)()){
 void test_ordered_kvset_properties(KVSet * (*create_kvset_fun)()){
     printf("\033[32m -- STARTING ORDERED PROPERTIES TESTS! -- \033[m\n");
 
-    T(test_first(create_kvset_fun), "test_first()");
-    T(test_first(create_kvset_fun), "test_last()");
-    T(test_next(create_kvset_fun), "test_next()");
-    T(test_previous(create_kvset_fun), "test_previous()");
+    /* T(test_first(create_kvset_fun), "test_first()"); */
+    /* T(test_first(create_kvset_fun), "test_last()"); */
+    /* T(test_next(create_kvset_fun), "test_next()"); */
+    /* T(test_previous(create_kvset_fun), "test_previous()"); */
 
     printf("\033[32m -- ORDERED PROPERTIES TESTS COMPLETED! -- \033[m\n");
+}
+
+
+void test_concurrent_kvset_properties(KVSet * (*create_kvset_fun)()){
+    printf("\033[32m -- STARTING CONCURRENT PROPERTIES TESTS! -- \033[m\n");
+    kvset_init();
+    T(test_concurrent_insert(create_kvset_fun), "test_concurrent_insert()");
+    //T(test_concurrent_insert_remove(create_kvset_fun), "concurrent_insert_remove()");
+    //T(test_concurrent_insert_remove_lookup(create_kvset_fun), "test_concurrent_insert_remove_lookup()");
+
+    printf("\033[32m -- CONCURRENT PROPERTIES TESTS COMPLETED! -- \033[m\n");
 }
 
 void test_unordered_kvset_properties(KVSet * (*create_kvset_fun)()){
