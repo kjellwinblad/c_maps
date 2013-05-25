@@ -206,14 +206,14 @@ struct validate_lock_result validate_and_lock(struct find_result * neigbours,
         valid && link_level >= level_to_insert_to; 
         link_level--){
         pred = neigbours->neigbours_before[link_level];
-        //TODO This is a bug in case neigbours->element_skiplist != NULL
+
         if(neigbours->element_skiplist != NULL){
             level_pos = link_level - (SKIPLIST_NUM_OF_LEVELS - neigbours->element_skiplist->num_of_levels);
             succs = neigbours->element_skiplist->lower_lists[level_pos];
         }else{
             succs = neigbours->neigbours_after[link_level];            
         }
-
+ 
         if(pred != last_pred){//Otherwise already locked
             result.locks_to_unlock[result.lock_unlock_count] = &pred->lock;
             result.lock_unlock_count++;
@@ -222,33 +222,24 @@ struct validate_lock_result validate_and_lock(struct find_result * neigbours,
         }
         highest_locked = link_level;
         level_pos = link_level - (SKIPLIST_NUM_OF_LEVELS - pred->num_of_levels);
-        //printf("a %d %d %d", level_pos, pred->num_of_levels, link_level);
-        //if(neigbours->element_skiplist!=NULL)
-            //printf(" %lu %lu %lu %lu\n", pthread_self(), neigbours->element_skiplist, pred, neigbours->element_skiplist->element);
-        /*printf("a %d %d", //%lu %lu", 
-               //!ACCESS_ONCE(pred->marked), 
-               //ACCESS_ONCE(succs->fully_linked), 
-               //neigbours->element_skiplist == NULL, 
-               level_pos,
-               pred->num_of_levels//,
-               //               ACCESS_ONCE(pred->lower_lists[level_pos]),
-               //neigbours->element_skiplist
-               );*/
-        //printf("!ACCESS_ONCE(pred->marked) %d\n",!ACCESS_ONCE(pred->marked));
-        //printf("ACCESS_ONCE(succs->fully_linked) %d\n",ACCESS_ONCE(succs->fully_linked));
-        //printf("ACCESS_ONCE(pred->lower_lists[level_pos]) == skiplist %d\n",ACCESS_ONCE(pred->lower_lists[level_pos]) == skiplist);
-        valid = !ACCESS_ONCE(pred->marked) && 
+
+valid = !ACCESS_ONCE(pred->marked) && 
             ACCESS_ONCE(succs->fully_linked) &&
             (ACCESS_ONCE(pred->lower_lists[level_pos]) == 
              (neigbours->element_skiplist == NULL ? succs : neigbours->element_skiplist));
+
+//printf("%d %d %d %lu %lu\n",
+//            !ACCESS_ONCE(pred->marked),
+//            ACCESS_ONCE(succs->fully_linked),
+//            (ACCESS_ONCE(pred->lower_lists[level_pos]) == (neigbours->element_skiplist == NULL ? succs : neigbours->element_skipli//st)),
+//            pthread_self(),
+//            pred);
+
+
+
     }
     result.highest_locked = highest_locked;
     result.valid = valid;
-    if(valid){
-        //printf("SUCCESS!\n");
-    }else{
-        //printf("%d", result.lock_unlock_count);
-    }
 
     return result;
 }
@@ -256,11 +247,9 @@ struct validate_lock_result validate_and_lock(struct find_result * neigbours,
 static inline 
 void unlock_to_level(struct validate_lock_result * to_clean_up){
     int i;
-    //printf("BEFORE %d\n", to_clean_up->lock_unlock_count);
     for(i = 0; i < to_clean_up->lock_unlock_count; i++){
         pthread_mutex_unlock(to_clean_up->locks_to_unlock[i]);
     }
-    //printf("AFTER\n");
 }
 void print(SkiplistNode* skiplist){
 SkiplistNode* siter = skiplist;
@@ -278,7 +267,7 @@ void printF(SkiplistNode* skiplist){
     int count2 = 0;
     int i = 0;
     while(!(siter->info & SKIPLIST_RIGHT_BORDER_NODE)){
-        printf("D %d %lu %lu :",count,siter->element, siter);
+        printf("D %d %lu %d %lu :",count,siter->element,siter->marked, siter);
         count2 = 0;
         for(i = siter->num_of_levels-1; count2 < 5 && i >= 0; i--){
             printf("%lu ",siter->lower_lists[i]);
@@ -301,47 +290,18 @@ int try_insert_sublist(SkiplistNode* skiplist,
     struct validate_lock_result validate_result = 
         validate_and_lock(neigbours, level_to_insert_to);
 
-    //printF(skiplist);
+    
+
+    assert(neigbours->element_skiplist == NULL);
 
     if(validate_result.valid){
-        if(neigbours->element_skiplist != NULL){
-            //TODO THIS MAKES THE REPLACE NON ATOMIC
-            neigbours->element_skiplist->marked = 1;
-            __sync_synchronize();
-        }
-        for(link_level = SKIPLIST_NUM_OF_LEVELS - 1; 
-            link_level >= level_to_insert_to; 
-            link_level--){
-            if(neigbours->element_skiplist != NULL){
-                int level_pos = link_level - (SKIPLIST_NUM_OF_LEVELS - neigbours->neigbours_before[link_level]->num_of_levels);
-                assert(neigbours->neigbours_before[link_level]->lower_lists[level_pos] == neigbours->element_skiplist);
-                //set_next_at_level(sublist,
-                //                  ACCESS_ONCE(neigbours->neigbour_before[level_pos]->lower_lists[level_pos]),
-                //                 link_level);
-         
-            }else {
-                int level_pos = link_level - (SKIPLIST_NUM_OF_LEVELS - neigbours->neigbours_before[link_level]->num_of_levels);
-                assert(neigbours->neigbours_before[link_level]->lower_lists[level_pos] == neigbours->neigbours_after[link_level]);
-            }
-        }
 
-        //printf("t");
         for(link_level = SKIPLIST_NUM_OF_LEVELS - 1; 
             link_level >= level_to_insert_to; 
             link_level--){
-            if(neigbours->element_skiplist != NULL){
-                int level_pos = link_level - (SKIPLIST_NUM_OF_LEVELS - neigbours->element_skiplist->num_of_levels);
-                //printf("t");
-                //assert(ACCESS_ONCE(neigbours->neigbours_after[link_level]) ==
-                //   neigbours->element_skiplist->lower_lists[level_pos]);
-                set_next_at_level(sublist,
-                                  ACCESS_ONCE(neigbours->element_skiplist->lower_lists[level_pos]),
-                                  link_level);
-            }else{
                 set_next_at_level(sublist,
                                   neigbours->neigbours_after[link_level],
                                   link_level);
-            }
         }
         __sync_synchronize();
         for(link_level = SKIPLIST_NUM_OF_LEVELS - 1; 
@@ -352,26 +312,14 @@ int try_insert_sublist(SkiplistNode* skiplist,
                               link_level);
             
         }
-        for(link_level = SKIPLIST_NUM_OF_LEVELS - 1; 
-            link_level >= level_to_insert_to; 
-            link_level--){
-            if(neigbours->element_skiplist != NULL){
-                int level_pos = link_level - (SKIPLIST_NUM_OF_LEVELS - neigbours->neigbours_before[link_level]->num_of_levels);
-                assert(neigbours->neigbours_before[link_level]->lower_lists[level_pos] == sublist);
-                //set_next_at_level(sublist,
-                //                  ACCESS_ONCE(neigbours->neigbour_before[level_pos]->lower_lists[level_pos]),
-                //                 link_level);
-         
-            }else {
-                int level_pos = link_level - (SKIPLIST_NUM_OF_LEVELS - neigbours->neigbours_before[link_level]->num_of_levels);
-                assert(neigbours->neigbours_before[link_level]->lower_lists[level_pos] == sublist);
-            }
-        }
         __sync_synchronize();
         sublist->fully_linked = 1;
         __sync_synchronize();
-    } 
-
+    }else {
+ 
+        //printF(skiplist);
+ 
+    }
 
     unlock_to_level(&validate_result);
 
@@ -383,6 +331,7 @@ static inline
 int try_remove_element(struct find_result * neigbours, 
                        int level_to_remove_to){
     int link_level;
+    int level_pos;
     struct validate_lock_result validate_result = 
         validate_and_lock(neigbours, level_to_remove_to);
     
@@ -390,12 +339,14 @@ int try_remove_element(struct find_result * neigbours,
         for(link_level = SKIPLIST_NUM_OF_LEVELS - 1; 
             link_level >= level_to_remove_to; 
             link_level--){
+            level_pos = link_level - (SKIPLIST_NUM_OF_LEVELS - neigbours->element_skiplist->num_of_levels);
             set_next_at_level(neigbours->neigbours_before[link_level],
-                              neigbours->neigbours_after[link_level],
+                              //neigbours->neigbours_after[link_level],
+                              neigbours->element_skiplist->lower_lists[level_pos],
                               link_level);
         }
         __sync_synchronize();
-    } 
+    }
 
     unlock_to_level(&validate_result);
 
@@ -464,6 +415,7 @@ void * skiplist_put(KVSet* kv_set, void * key_value){
     Skiplist * skiplist = (Skiplist *) &(kv_set->type_specific_data);
     SkiplistNode * head_node = &(skiplist->head_node);
     SkiplistNode * element_skiplist;
+    SkiplistNode * old_element;
     SkiplistNode* new_skiplist_node;
     void * key = key_value + kv_set->key_offset;
     int success;
@@ -473,12 +425,11 @@ void * skiplist_put(KVSet* kv_set, void * key_value){
                                                       key, 
                                                       skiplist->compare,
                                                       kv_set->key_offset);
-        //printf("a");
+
         element_skiplist = neigbours.element_skiplist;
     
         if(element_skiplist == NULL){
-            //insert new
-            //printf("INSERT NEW!\n");
+       
             int level = random_level(head_node->num_of_levels);
             int num_of_elements_in_insert_level = head_node->num_of_levels - level;
             new_skiplist_node =
@@ -492,29 +443,18 @@ void * skiplist_put(KVSet* kv_set, void * key_value){
            }
         } else if(!ACCESS_ONCE(element_skiplist->marked)){
             while(!ACCESS_ONCE(element_skiplist->fully_linked)){}
-            pthread_mutex_lock(&element_skiplist->lock);
-            //printf(" %lu ", key_value);
-            
+            pthread_mutex_lock(&element_skiplist->lock);          
             if(!ACCESS_ONCE(element_skiplist->marked)){
 
-                new_skiplist_node =
-                    create_skiplist_node(element_skiplist->num_of_levels, 
-                                         key_value, 
-                                         skiplist->malloc);
-                success = try_insert_sublist(head_node, 
-                                             &neigbours, 
-                                             new_skiplist_node, 
-                                             head_node->num_of_levels - element_skiplist->num_of_levels);
-                
+                old_element = ACCESS_ONCE(element_skiplist->element);
+
+                element_skiplist->element = key_value;
+                __sync_synchronize();
 
                 pthread_mutex_unlock(&element_skiplist->lock);
-                if(success){
-                    //TODO CHECK HAZARD POINTERS...
-                    //skiplist->free(neigbours.element_skiplist);
-                    return neigbours.element_skiplist->element;
-                }else{
-                    skiplist->free(new_skiplist_node);
-                }
+                
+                return old_element;
+
             }else{
                 pthread_mutex_unlock(&element_skiplist->lock);
             }
@@ -550,6 +490,7 @@ void * skiplist_remove(KVSet* kv_set, void * key){
     SkiplistNode * element_skiplist;
     struct find_result neigbours;
     int deleted_by_us = 0;
+    void * element_to_return_on_success = NULL;
     int success = 0;
     while(1){
         neigbours = find_neigbours(head_node,
@@ -558,27 +499,55 @@ void * skiplist_remove(KVSet* kv_set, void * key){
         element_skiplist = neigbours.element_skiplist;
 
         if(element_skiplist == NULL){
-            return NULL;
-        }else if(!deleted_by_us && ACCESS_ONCE(element_skiplist->marked)){
+            assert(!deleted_by_us);
+            return NULL;    
+        }else if(deleted_by_us){
+            //Try to finalize remove again
+            pthread_mutex_lock(&element_skiplist->lock);
+            
+            success = try_remove_element(&neigbours, 
+                                         SKIPLIST_NUM_OF_LEVELS - neigbours.element_skiplist->num_of_levels);
+
+            pthread_mutex_unlock(&element_skiplist->lock);
+            
+            if(success){
+                //TODO free node
+
+                return element_to_return_on_success;
+            }else{
+                //printF(head_node);
+            }
+
+        }else if(ACCESS_ONCE(element_skiplist->marked)){
             return NULL;
         } else {
-          
-            if(!deleted_by_us){
-                //It might be put that is replacing another node
-                while(!ACCESS_ONCE(element_skiplist->fully_linked)){}
-                if(__sync_bool_compare_and_swap(&element_skiplist->marked, 0, 1)){
-                    deleted_by_us = 1;
-                }else{
-                    return NULL;
+            //Attempt to remove
+            while(!ACCESS_ONCE(element_skiplist->fully_linked)){}
+            pthread_mutex_lock(&element_skiplist->lock);          
+            if(!ACCESS_ONCE(element_skiplist->marked)){
+
+                element_skiplist->marked = 1;
+                  
+                __sync_synchronize();
+
+                element_to_return_on_success = ACCESS_ONCE(element_skiplist->element);
+
+                deleted_by_us = 1;
+
+                success = try_remove_element(&neigbours, 
+                                             SKIPLIST_NUM_OF_LEVELS - neigbours.element_skiplist->num_of_levels);
+
+                pthread_mutex_unlock(&element_skiplist->lock);
+                
+                if(success){
+                    //TODO FREE NODE
+
+                    return element_to_return_on_success;
                 }
+            }else{
+                pthread_mutex_unlock(&element_skiplist->lock);
             }
-            success = try_remove_element(&neigbours,  
-                                         head_node->num_of_levels - element_skiplist->num_of_levels);
-            if(success){
-                //TODO CHECK HAZARD POINTERS...
-                //skiplist->free(neigbours.element_skiplist);
-                return neigbours.element_skiplist->element;
-            }
+
         }
     }
 }
