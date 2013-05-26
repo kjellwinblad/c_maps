@@ -6,7 +6,7 @@ TEST_OBJECTS_SKIPLIST_CONCURRENT = test_skiplist.o test_kvset.o  skiplist_concur
 BENCHMARK_SKIPLIST_OBJECTS = benchmark_skiplist.o skiplist.o benchmark_kvset.o
 LIBS =
 
-all: test_skiplist benchmark_skiplist test_skiplist_concurrent
+all: test_skiplist benchmark_skiplist test_skiplist_concurrent hazard_pointers.o
 
 test_skiplist: $(TEST_OBJECTS_SKIPLIST) 
 	$(CC) -o test_skiplist $(TEST_OBJECTS_SKIPLIST) $(CFLAGS) $(LIBS)
@@ -42,6 +42,9 @@ skiplist.o: skiplist.c skiplist.h kvset.h
 
 skiplist_concurrent.o: skiplist_concurrent.c skiplist_concurrent.h kvset.h
 	$(CC) $(CFLAGS) -c skiplist_concurrent.c 
+
+hazard_pointers.o: hazard_pointers.c hazard_pointers.h
+	$(CC) $(CFLAGS) -c hazard_pointers.c 
 
 clean:
 	rm -f test_skiplist benchmark_skiplist $(TEST_OBJECTS) $(BENCHMARK_SKIPLIST_OBJECTS)
