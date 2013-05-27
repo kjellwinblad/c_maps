@@ -118,6 +118,9 @@ void remove_hazard_pointers(HazardPointerData * hpdata, struct find_result * nei
     //    printf("START REMOVE %d %d\n", get_hazard_count(hpdata), neigbours->level_found);
     //debug_print_hps(hpdata);
     assert(get_hazard_count(hpdata));
+    if(neigbours->element_skiplist != NULL){
+        hazard_pointer_remove(hpdata, neigbours->element_skiplist);
+    }
     for(link_level = SKIPLIST_NUM_OF_LEVELS - 1; 
         link_level >= 0; 
         link_level--){
@@ -125,9 +128,7 @@ void remove_hazard_pointers(HazardPointerData * hpdata, struct find_result * nei
         hazard_pointer_remove(hpdata, neigbours->neigbours_before[link_level]);
         hazard_pointer_remove(hpdata, neigbours->neigbours_after[link_level]);
     }
-    if(neigbours->element_skiplist != NULL){
-        hazard_pointer_remove(hpdata, neigbours->element_skiplist);
-    }
+
     //printf("END REMOVE\n");
     assert(get_hazard_count(hpdata)==0);
 }
@@ -467,6 +468,12 @@ void skiplist_delete(KVSet* kv_set,
     skiplist->free(kv_set);
 
     return;
+}
+
+void print_stats(KVSet * kv_set){
+    Skiplist * skiplist = (Skiplist *) &(kv_set->type_specific_data);
+    HazardPointerData * hpdata = &skiplist->hazard_pointer_data;
+    print_add_sarch_statistics(hpdata);
 }
 
 static

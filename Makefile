@@ -5,8 +5,8 @@ TEST_OBJECTS_SKIPLIST = test_skiplist.o test_kvset.o  skiplist.o
 TEST_OBJECTS_SKIPLIST_CONCURRENT = test_skiplist.o test_kvset.o skiplist_concurrent.o hazard_pointers.o
 BENCHMARK_SKIPLIST_OBJECTS = benchmark_skiplist.o skiplist.o benchmark_kvset.o
 LIBS =
-
-all: test_skiplist benchmark_skiplist test_skiplist_concurrent hazard_pointers.o
+#test_skiplist benchmark_skiplist 
+all: test_skiplist_concurrent hazard_pointers.o
 
 test_skiplist: $(TEST_OBJECTS_SKIPLIST) 
 	$(CC) -o test_skiplist $(TEST_OBJECTS_SKIPLIST) $(CFLAGS) $(LIBS)

@@ -78,11 +78,21 @@ void do_free_scan(HazardPointerData * data, ThreadHazardPointerData * myData, vo
 }
 
 
+void print_add_sarch_statistics(HazardPointerData * data){
+    ThreadHazardPointerData * myData = pthread_getspecific(data->my_hazard_pointer_data);
+    printf("myData->adds %d myData->add_search %d\n",myData->adds,myData->add_search);
+    printf("myData->removes %d myData->remove_search %d\n",myData->removes,myData->remove_search);
+}
+
 ThreadHazardPointerData * hazard_pointer_thread_initialize(HazardPointerData * data){
     ThreadHazardPointerData * myData = malloc(sizeof(ThreadHazardPointerData));
     int success = 0;
     int i;
     myData->hp_count = 0;
+    myData->adds = 0;
+    myData->add_search = 0;
+    myData->removes = 0;
+    myData->remove_search = 0;
     for(i = 0; i < MAX_NUM_OF_POINTERS_PER_THREAD; i++){
         myData->hazard_pointers[i] = NULL;
     }
@@ -142,15 +152,17 @@ void * hazard_pointer_add(HazardPointerData * data, void ** pointer){
         pthread_setspecific(data->my_hazard_pointer_data, myData);
         //printf("%myData lu\n", myData);
     }
+    myData->adds++;
     //printf("a %d ",myData->hp_count);
     slot = myData->current_hp_slot;
     //printf("before %lu\n", ACCESS_ONCE(*pointer));
-    do{
+    while(myData->hazard_pointers[slot] != NULL){
+        myData->add_search++;
         slot++;
         if(slot == MAX_NUM_OF_POINTERS_PER_THREAD){
             slot = 0;
         }
-    }while(myData->hazard_pointers[slot] != NULL);
+    }
     //printf("after %lu\n", ACCESS_ONCE(*pointer));
     do{
         myData->hazard_pointers[slot] = ACCESS_ONCE(*pointer);
@@ -167,13 +179,14 @@ void * hazard_pointer_add(HazardPointerData * data, void ** pointer){
 }
 
 void hazard_pointer_remove(HazardPointerData * data, void * pointer){
-    int slot, beginning_slot;
+    int slot;
     int c = 0;
     ThreadHazardPointerData * myData = pthread_getspecific(data->my_hazard_pointer_data);
     //printf("r %d ",myData->hp_count);
-    beginning_slot = slot = myData->current_hp_slot;
-    
-    do{ 
+    slot = myData->current_hp_slot;
+    myData->removes++;
+    do{
+        myData->remove_search++;
         c++;
         if(slot == 0){
             slot = MAX_NUM_OF_POINTERS_PER_THREAD;
@@ -187,8 +200,11 @@ void hazard_pointer_remove(HazardPointerData * data, void * pointer){
             assert(0);
          }
     }while(myData->hazard_pointers[slot] != pointer);
+
+
     // printf("hej");
     myData->hazard_pointers[slot] = NULL;
+    myData->current_hp_slot = slot;
     myData->hp_count--;
     //debug_print_hps(data);
     __sync_synchronize();

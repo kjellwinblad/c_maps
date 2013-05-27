@@ -1,13 +1,15 @@
 #include "test_kvset.h"
 
+#include "skiplist_concurrent.h"
+
 #include "stdio.h"
 #include "stdlib.h"
 #include "time.h"
 #include "assert.h"
 #include "pthread.h"
 
-#define NUMBER_OF_THREADS 8
-#define NUMBER_OF_ACCESSES_PER__THREAD 1000
+#define NUMBER_OF_THREADS 6
+#define NUMBER_OF_ACCESSES_PER__THREAD 100000
 #define KEY_RANGE 10
 #define REMOVE_INSERT_PROCENTAGE_INSERT 0.7
 
@@ -17,6 +19,7 @@
  * Internal functions
  * ==================
  */
+
 
 #define TO_VP(intValue) (void *)(intValue)
 
@@ -36,6 +39,8 @@ void test(int success, char msg[]){
     printf("TEST: %s\n", msg);
 
 }
+
+
 
 int test_create_and_delete(KVSet * (*create_kvset_fun)()){
     KVSet* skiplist = create_kvset_fun();
@@ -178,7 +183,7 @@ int test_insert_lookup_delete_lookup_many(KVSet * (*create_kvset_fun)()){
     for(i = 0; i < nr_of_ops_of_each_type; i++){
         assert(NULL == skiplist->funs.lookup(skiplist, TO_VP(elements[i])));
     }
-
+    print_stats(skiplist);
     skiplist->funs.delete_table(skiplist, NULL, NULL);
     
     return 1;
@@ -303,6 +308,7 @@ void * test_concurrent_insert_thread(void * x){
             global_skiplist->funs.put(global_skiplist,TO_VP(key));
         //printf("%d\n",i);
     }
+    print_stats(global_skiplist);
     return NULL;
 }
 
@@ -343,6 +349,7 @@ void * test_concurrent_insert_remove_thread(void * x){
             global_skiplist->funs.remove(global_skiplist,TO_VP(key));
         }
     }
+    print_stats(global_skiplist);
     return NULL;
 }
 
