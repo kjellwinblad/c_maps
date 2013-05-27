@@ -9,9 +9,7 @@ int main(int argc, char **argv){
 
     test_general_kvset_properties(new_skiplist_default);
 
-    //test_ordered_kvset_properties(new_skiplist_default);
-
-    test_concurrent_kvset_properties(new_skiplist_default);
+    test_ordered_kvset_properties(new_skiplist_default);
 
     printf("\n\n\n\033[32m ### SKIPLIST TESTS COMPLETED! -- \033[m\n\n\n");
 

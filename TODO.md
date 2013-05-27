@@ -7,6 +7,6 @@ TODO
    1. **DONE** Add "constructor" that takes a comparison function
    2. **DONE** Include "method table" in the data structure
 4. **DONE** Implement general test so other data types with the same interface can use it
-5. **DONE**  Implement general benchmark so other data types with the same interface can use it
-6. Implement concurrent version of the linked list
+5. **DONE** Implement general benchmark so other data types with the same interface can use it
+6. **DONE** Implement concurrent version of the skiplist
 

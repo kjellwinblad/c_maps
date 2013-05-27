@@ -1,7 +1,5 @@
 #include "test_kvset.h"
 
-#include "skiplist_concurrent.h"
-
 #include "stdio.h"
 #include "stdlib.h"
 #include "time.h"
@@ -183,7 +181,7 @@ int test_insert_lookup_delete_lookup_many(KVSet * (*create_kvset_fun)()){
     for(i = 0; i < nr_of_ops_of_each_type; i++){
         assert(NULL == skiplist->funs.lookup(skiplist, TO_VP(elements[i])));
     }
-    print_stats(skiplist);
+
     skiplist->funs.delete_table(skiplist, NULL, NULL);
     
     return 1;
@@ -308,7 +306,6 @@ void * test_concurrent_insert_thread(void * x){
             global_skiplist->funs.put(global_skiplist,TO_VP(key));
         //printf("%d\n",i);
     }
-    print_stats(global_skiplist);
     return NULL;
 }
 
@@ -349,7 +346,6 @@ void * test_concurrent_insert_remove_thread(void * x){
             global_skiplist->funs.remove(global_skiplist,TO_VP(key));
         }
     }
-    print_stats(global_skiplist);
     return NULL;
 }
 

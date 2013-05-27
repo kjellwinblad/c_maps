@@ -21,23 +21,16 @@ int hp_release_data_compare (const void * a, const void * b){
 int find_index_of_pointer(HPReleaseData release_list[], void * pointer){
     int imin = 0;
     int imax = RELEASE_LIST_MAX_SIZE - 1;
-    // continue searching while [imin,imax] is not empty
     while (imax >= imin){
-        /* calculate the midpoint for roughly equal partition */
         int imid = imin + (imax-imin)/2;
-        // determine which subarray to search
         if (release_list[imid].data < pointer){
-            // change min index to search upper subarray
             imin = imid + 1;
         }else if (release_list[imid].data > pointer){
-            // change max index to search lower subarray
             imax = imid - 1;
         }else{
-            // key found at index imid
             return imid;
         }
     }
-    // key not found
     return -1;
 }
 
