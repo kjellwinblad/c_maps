@@ -5,7 +5,7 @@
 
 
 
-#define MAX_NUM_OF_POINTERS_PER_THREAD 32
+#define MAX_NUM_OF_POINTERS_PER_THREAD 64
 #define RELEASE_LIST_MAX_SIZE 32
 
 
@@ -19,7 +19,8 @@ typedef struct HPReleaseDataImpl {
 
 typedef struct ThreadHazardPointerDataImpl {
     void * hazard_pointers[MAX_NUM_OF_POINTERS_PER_THREAD];
-    int next_hp_slot;
+    int hp_count;
+    int current_hp_slot;
     HPReleaseData release_list[RELEASE_LIST_MAX_SIZE];
     int current_rl_slot;
     int release_list_size;
@@ -35,7 +36,7 @@ typedef struct HazardPointerDataImpl {
 
 void hazard_pointer_initialize(HazardPointerData * data);
 
-void hazard_pointer_add(HazardPointerData * data, void ** pointer);
+void * hazard_pointer_add(HazardPointerData * data, void ** pointer);
 
 void hazard_pointer_remove(HazardPointerData * data, void * pointer);
 

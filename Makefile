@@ -1,8 +1,8 @@
 
 CC = gcc
-CFLAGS = -I. -Ihazard_pointer_lib -O1 -Wall -g -Wdeclaration-after-statement -pthread
+CFLAGS = -I. -Ihazard_pointer_lib -O0 -Wall -g -Wdeclaration-after-statement -pthread
 TEST_OBJECTS_SKIPLIST = test_skiplist.o test_kvset.o  skiplist.o
-TEST_OBJECTS_SKIPLIST_CONCURRENT = test_skiplist.o test_kvset.o  skiplist_concurrent.o 
+TEST_OBJECTS_SKIPLIST_CONCURRENT = test_skiplist.o test_kvset.o skiplist_concurrent.o hazard_pointers.o
 BENCHMARK_SKIPLIST_OBJECTS = benchmark_skiplist.o skiplist.o benchmark_kvset.o
 LIBS =
 
@@ -47,6 +47,6 @@ hazard_pointers.o: hazard_pointers.c hazard_pointers.h
 	$(CC) $(CFLAGS) -c hazard_pointers.c 
 
 clean:
-	rm -f test_skiplist benchmark_skiplist $(TEST_OBJECTS) $(BENCHMARK_SKIPLIST_OBJECTS)
+	rm -f test_skiplist test_skiplist_concurrent benchmark_skiplist $(TEST_OBJECTS_SKIPLIST) $(TEST_OBJECTS_SKIPLIST_CONCURRENT) $(BENCHMARK_SKIPLIST_OBJECTS)
 
 check: test_skiplist benchmark_skiplist

@@ -7,8 +7,8 @@
 #include "pthread.h"
 
 #define NUMBER_OF_THREADS 8
-#define NUMBER_OF_ACCESSES_PER__THREAD 10000000
-#define KEY_RANGE 1000000
+#define NUMBER_OF_ACCESSES_PER__THREAD 1000
+#define KEY_RANGE 10
 #define REMOVE_INSERT_PROCENTAGE_INSERT 0.7
 
 
@@ -389,14 +389,14 @@ void test_general_kvset_properties(KVSet * (*create_kvset_fun)()){
     kvset_init_thread(1);
     printf("\033[32m -- STARTING GENERAL PROPERTIES TESTS! -- \033[m\n");
 
-    T(test_create_and_delete(create_kvset_fun), "test_create_and_delete()");
+        T(test_create_and_delete(create_kvset_fun), "test_create_and_delete()");
     T(test_insert(create_kvset_fun), "test_insert()");
     T(test_insert_write_over(create_kvset_fun), "test_insert_write_over()");
     T(test_lookup(create_kvset_fun), "test_lookup()");
     T(test_lookup_not_exsisting(create_kvset_fun), "test_lookup_not_exsisting()");
     T(test_remove(create_kvset_fun), "test_remove()");
     T(test_insert_lookup_delete_lookup_many(create_kvset_fun), "test_insert_lookup_delete_lookup_many()");
-    T(test_insert_new(create_kvset_fun), "test_insert_new()");
+    //T(test_insert_new(create_kvset_fun), "test_insert_new()");
 
     printf("\033[32m -- GENERAL PROPERTIES TESTS COMPLETED! -- \033[m\n");  
 

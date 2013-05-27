@@ -10,7 +10,7 @@
 //Compiller barrier
 #define barrier() __asm__ __volatile__("": : :"memory")
 
-inline
+/*inline
 int get_and_set_int(int * pointerToOldValue, int newValue){
     int x = ACCESS_ONCE(*pointerToOldValue);
     while (1) {
@@ -24,6 +24,6 @@ typedef union CacheLinePaddedIntImpl {
     int value;
     char padding[64];
 } CacheLinePaddedInt;
-
+*/
 
 #endif
