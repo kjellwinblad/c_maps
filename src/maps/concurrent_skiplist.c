@@ -82,12 +82,29 @@ SkiplistNode* create_skiplist_node(int num_of_levels,
     return skiplist;
 }
 
+static
+unsigned short * init_random_seed_thread(){
+    unsigned short * seed =  malloc(sizeof(unsigned short) * 3);
+    unsigned short * seedResult;
+    srand48(pthread_self());
+    seedResult = seed48(seed);
+    seed[0] = seedResult[0];
+    seed[1] = seedResult[1];
+    seed[2] = seedResult[2];
+    pthread_setspecific(random_seed_key, seed);
+    return seed;
+}
+
 static inline 
 int random_level(int num_of_levels){
     int i;
     long random_number;
     int num;
-    random_number = 2147483648 + jrand48(pthread_getspecific(random_seed_key));
+    unsigned short * seed = pthread_getspecific(random_seed_key);
+    if(seed == NULL){
+        seed = init_random_seed_thread();
+    }
+    random_number = 2147483648 + jrand48(seed);
     num = 2;
     for(i = num_of_levels -1 ; i > 0 ; i--){
         if(random_number > (2147483648 / num)){
@@ -723,6 +740,7 @@ KVSet * new_skiplist_default(){
                         0);
 }
 
+static
 void random_seed_destructor(void* mem){
     free(mem);
 }
@@ -731,13 +749,3 @@ void kvset_init(){
     pthread_key_create(&random_seed_key, random_seed_destructor);
 }
 
-void kvset_init_thread(int id){
-    unsigned short * seed =  malloc(sizeof(unsigned short) * 3);
-    unsigned short * seedResult;
-    srand48(id);
-    seedResult = seed48(seed);
-    seed[0] = seedResult[0];
-    seed[1] = seedResult[1];
-    seed[2] = seedResult[2];
-    pthread_setspecific(random_seed_key, seed);
-}

@@ -298,7 +298,6 @@ void * test_concurrent_insert_thread(void * x){
     int i;
     long key;
     unsigned short * xsubi = (unsigned short *)x;
-    kvset_init_thread(pthread_self());
     for(i = 0; i < number_of_accesses_per_thread; i++){
         key = 1+key_range*2 + jrand48(xsubi)%key_range;
         if(key!=0)
@@ -340,7 +339,6 @@ void * test_concurrent_insert_remove_thread(void * x){
     int i;
     long key;
     unsigned short * xsubi = (unsigned short *)x;
-    kvset_init_thread(pthread_self());
     for(i = 0; i < number_of_accesses_per_thread; i++){
         key = 1+key_range*2 + jrand48(xsubi)%key_range;
         if(erand48(xsubi) < remove_insert_procentage_insert){
@@ -398,7 +396,6 @@ int test_concurrent_insert_remove_lookup(KVSet * (*create_kvset_fun)()){
  */
 void test_general_kvset_properties(KVSet * (*create_kvset_fun)()){
     kvset_init();
-    kvset_init_thread(1);
     printf("\033[32m -- STARTING GENERAL PROPERTIES TESTS! -- \033[m\n");
 
     T(test_create_and_delete(create_kvset_fun), "test_create_and_delete()");
