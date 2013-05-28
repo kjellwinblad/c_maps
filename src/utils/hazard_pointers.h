@@ -19,13 +19,6 @@ typedef struct HPReleaseDataImpl {
 
 typedef struct ThreadHazardPointerDataImpl {
     void * hazard_pointers[MAX_NUM_OF_POINTERS_PER_THREAD];
-    //DEBUG
-    int hp_count;
-    int adds;
-    int add_search;
-    int removes;
-    int remove_search;
-    //DEBUG END
     int current_hp_slot;
     HPReleaseData release_list[RELEASE_LIST_MAX_SIZE];
     int current_rl_slot;
@@ -48,4 +41,6 @@ void hazard_pointer_remove(HazardPointerData * data, void * pointer);
 
 void hazard_pointer_free(HazardPointerData * data, void * pointer, void (*free)(void *));
 
-#endif /* HAZARD_H_ */
+void hazard_pointer_free_everything(HazardPointerData * data, void (*free)(void *));
+
+#endif

@@ -115,22 +115,15 @@ int compare(SkiplistNode* skiplist,
 static inline
 void remove_hazard_pointers(HazardPointerData * hpdata, struct find_result * neigbours){
     int link_level;
-    //    printf("START REMOVE %d %d\n", get_hazard_count(hpdata), neigbours->level_found);
-    //debug_print_hps(hpdata);
-    assert(get_hazard_count(hpdata));
     if(neigbours->element_skiplist != NULL){
         hazard_pointer_remove(hpdata, neigbours->element_skiplist);
     }
     for(link_level = SKIPLIST_NUM_OF_LEVELS - 1; 
         link_level >= 0; 
         link_level--){
-        //  printf("link level %d \n", link_level);
         hazard_pointer_remove(hpdata, neigbours->neigbours_before[link_level]);
         hazard_pointer_remove(hpdata, neigbours->neigbours_after[link_level]);
     }
-
-    //printf("END REMOVE\n");
-    assert(get_hazard_count(hpdata)==0);
 }
 
 static inline 
@@ -149,7 +142,6 @@ struct one_level_find_result find_neigbours_1_level(SkiplistNode* skiplist,
     hazard_pointer_add(hpdata, (void**)&skiplist_prev);
     skiplist_next = hazard_pointer_add(hpdata, 
                                        (void**)&skiplist_prev->lower_lists[level_pos]);
-//printf("LOOK IN LEVEL\n");
     if(prev_skiplist_element != NULL){
         hazard_pointer_remove(hpdata, prev_skiplist_element);
     }
@@ -189,17 +181,14 @@ struct find_result find_neigbours(SkiplistNode* skiplist,
                                   int (*compare_function)(void *, void *),
                                   unsigned int key_offset,
                                   HazardPointerData * hpdata){
-    int old_hp_count = get_hazard_count(hpdata);
+
     int level;
     struct find_result result;
     struct one_level_find_result level_result;
     SkiplistNode* neigbour_before_iter = skiplist;
     int level_found = -1;
-    SkiplistNode* element_found = NULL;
     level_result.element_skiplist = NULL; 
-    //printf("ENTER\n");
     for(level = 0; level < SKIPLIST_NUM_OF_LEVELS; level++){
-        //printf("LEVEL %d\n", level);
         level_result = 
             find_neigbours_1_level(neigbour_before_iter, 
                                    element, 
@@ -208,12 +197,6 @@ struct find_result find_neigbours(SkiplistNode* skiplist,
                                    key_offset,
                                    level_result.element_skiplist,
                                    hpdata);
-        if(!((old_hp_count + 4) > get_hazard_count(hpdata))){
-            printf("old count %d \n", old_hp_count);
-            printf("new count %d \n", get_hazard_count(hpdata));
-            assert(0);
-        }
-        old_hp_count = get_hazard_count(hpdata);
         result.neigbours_before[level] = level_result.neigbour_before;
         result.neigbours_after[level] = level_result.neigbour_after;
         neigbour_before_iter = level_result.neigbour_before;
@@ -221,23 +204,17 @@ struct find_result find_neigbours(SkiplistNode* skiplist,
             if(level_found == -1){
                 level_found = level;
             }
-            element_found = level_result.element_skiplist;
         }
     }
-
     result.level_found = level_found;
-    //ELEMENT!!!!!!!
     result.element_skiplist = level_result.element_skiplist;
-    
     return result;
-
 }
 
 static inline
 void set_next_at_level(SkiplistNode* skiplist,
                        SkiplistNode* next_skiplist,
                        int level){
-    // printf("C");
     int level_pos = level - (SKIPLIST_NUM_OF_LEVELS - skiplist->num_of_levels);
     skiplist->lower_lists[level_pos] = next_skiplist;
 }
@@ -282,19 +259,10 @@ struct validate_lock_result validate_and_lock(struct find_result * neigbours,
         highest_locked = link_level;
         level_pos = link_level - (SKIPLIST_NUM_OF_LEVELS - pred->num_of_levels);
 
-valid = !ACCESS_ONCE(pred->marked) && 
+        valid = !ACCESS_ONCE(pred->marked) && 
             ACCESS_ONCE(succs->fully_linked) &&
             (ACCESS_ONCE(pred->lower_lists[level_pos]) == 
              (neigbours->element_skiplist == NULL ? succs : neigbours->element_skiplist));
-
-//printf("%d %d %d %lu %lu\n",
-//            !ACCESS_ONCE(pred->marked),
-//            ACCESS_ONCE(succs->fully_linked),
-//            (ACCESS_ONCE(pred->lower_lists[level_pos]) == (neigbours->element_skiplist == NULL ? succs : neigbours->element_skipli//st)),
-//            pthread_self(),
-//            pred);
-
-
 
     }
     result.highest_locked = highest_locked;
@@ -310,33 +278,6 @@ void unlock_to_level(struct validate_lock_result * to_clean_up){
         pthread_mutex_unlock(to_clean_up->locks_to_unlock[i]);
     }
 }
-void print(SkiplistNode* skiplist){
-SkiplistNode* siter = skiplist;
-    int count = 0;
-    while(!(siter->info & SKIPLIST_RIGHT_BORDER_NODE)){
-        printf("D %d %lu\n",count,siter->element);
-        siter = siter->lower_lists[siter->num_of_levels-1];
-        count = count +1;
-    }
-}
-
-void printF(SkiplistNode* skiplist){
-    SkiplistNode* siter = skiplist;//->lower_lists[skiplist->num_of_levels-1];
-    int count = 0;
-    int count2 = 0;
-    int i = 0;
-    while(!(siter->info & SKIPLIST_RIGHT_BORDER_NODE)){
-        printf("D %d %lu %d %lu :",count,siter->element,siter->marked, siter);
-        count2 = 0;
-        for(i = siter->num_of_levels-1; count2 < 5 && i >= 0; i--){
-            printf("%lu ",siter->lower_lists[i]);
-            count2++;
-        }
-        printf("\n");
-        siter = siter->lower_lists[siter->num_of_levels-1];
-        count = count +1;
-    }
-}
 
 static inline 
 int try_insert_sublist(SkiplistNode* skiplist, 
@@ -344,17 +285,10 @@ int try_insert_sublist(SkiplistNode* skiplist,
                     SkiplistNode* sublist, 
                     int level_to_insert_to){
     int link_level;
-    
-
     struct validate_lock_result validate_result = 
         validate_and_lock(neigbours, level_to_insert_to, NULL);
 
-    
-
-    assert(neigbours->element_skiplist == NULL);
-
     if(validate_result.valid){
-
         for(link_level = SKIPLIST_NUM_OF_LEVELS - 1; 
             link_level >= level_to_insert_to; 
             link_level--){
@@ -374,14 +308,8 @@ int try_insert_sublist(SkiplistNode* skiplist,
         __sync_synchronize();
         sublist->fully_linked = 1;
         __sync_synchronize();
-    }else {
- 
-        //printF(skiplist);
- 
     }
-
     unlock_to_level(&validate_result);
-
     return validate_result.valid;
 }
 
@@ -412,28 +340,6 @@ int try_remove_element(struct find_result * neigbours,
 
     return validate_result.valid;
 }
-
-/* static inline  */
-/* void * replace_element(SkiplistNode* skiplist,  */
-/*                     struct find_result * neigbours,  */
-/*                     void * new_element,  */
-/*                     int level_to_insert_to){ */
-/*     int link_level; */
-/*     void * old_element; */
-/*     struct validate_lock_result validate_result =  */
-/*         validate_and_lock(neigbours, level_to_insert_to); */
-    
-/*     if(validate_result.valid){ */
-/*         old_element = neigbours->element_skiplist->element; */
-/*         neigbours->element_skiplist->element = new_element; */
-/*         __sync_synchronize(); */
-/*     }  */
-
-/*     unlock_to_level(neigbours, validate_result.highest_locked); */
-
-/*     return (validate_result.valid ? old_element : NULL); */
-/* } */
-
 
 static
 int default_compare_function(void * e1, void * e2){
@@ -470,12 +376,6 @@ void skiplist_delete(KVSet* kv_set,
     return;
 }
 
-void print_stats(KVSet * kv_set){
-    Skiplist * skiplist = (Skiplist *) &(kv_set->type_specific_data);
-    HazardPointerData * hpdata = &skiplist->hazard_pointer_data;
-    print_add_sarch_statistics(hpdata);
-}
-
 static
 void * skiplist_put(KVSet* kv_set, void * key_value){
 
@@ -488,7 +388,6 @@ void * skiplist_put(KVSet* kv_set, void * key_value){
     void * key = key_value + kv_set->key_offset;
     int success;
     while(1){
-        assert(get_hazard_count(hpdata)==0);
         struct find_result neigbours = find_neigbours(head_node, 
                                                       key, 
                                                       skiplist->compare,
@@ -531,7 +430,7 @@ void * skiplist_put(KVSet* kv_set, void * key_value){
             }
         }else{
             remove_hazard_pointers(hpdata, &neigbours);
-            //TODO Optimize by returning here
+            return NULL;
         }
     }
 }
@@ -568,10 +467,7 @@ void * skiplist_remove(KVSet* kv_set, void * key){
     int deleted_by_us = 0;
     void * element_to_return_on_success = NULL;
     int success = 0;
-    int count = 0;
     while(1){
-        count++;
-        assert(get_hazard_count(hpdata)==0);
         neigbours = find_neigbours(head_node,
                                    key, skiplist->compare,
                                    kv_set->key_offset,
@@ -579,7 +475,6 @@ void * skiplist_remove(KVSet* kv_set, void * key){
         element_skiplist = neigbours.element_skiplist;
 
         if(element_skiplist == NULL){
-            assert(!deleted_by_us);
             remove_hazard_pointers(hpdata, &neigbours);
             return NULL;    
         }else if(deleted_by_us){
@@ -592,15 +487,11 @@ void * skiplist_remove(KVSet* kv_set, void * key){
             pthread_mutex_unlock(&element_skiplist->lock);
             remove_hazard_pointers(hpdata, &neigbours);
             if(success){
-                //TODO free node
                 hazard_pointer_free(hpdata, 
                                     neigbours.element_skiplist,
                                     skiplist->free);
                 return element_to_return_on_success;
-            }else{
-                //printF(head_node);
             }
-
         }else if(ACCESS_ONCE(element_skiplist->marked)){
             remove_hazard_pointers(hpdata, &neigbours);
             return NULL;
@@ -624,7 +515,6 @@ void * skiplist_remove(KVSet* kv_set, void * key){
                 pthread_mutex_unlock(&element_skiplist->lock);
                 remove_hazard_pointers(hpdata, &neigbours);
                 if(success){
-                    //TODO FREE NODE
                     hazard_pointer_free(hpdata, 
                                         neigbours.element_skiplist,
                                         skiplist->free);
@@ -834,7 +724,6 @@ KVSet * new_skiplist_default(){
 }
 
 void random_seed_destructor(void* mem){
-    printf("DESTROY MEM\n");
     free(mem);
 }
 
