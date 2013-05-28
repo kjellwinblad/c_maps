@@ -9,7 +9,7 @@ int main(int argc, char **argv){
 
     test_general_kvset_properties(new_skiplist_default);
 
-    test_ordered_kvset_properties(new_skiplist_default);
+    //test_ordered_kvset_properties(new_skiplist_default);
 
     test_concurrent_kvset_properties(new_skiplist_default);
 

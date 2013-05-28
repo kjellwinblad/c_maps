@@ -6,11 +6,6 @@
 #include "assert.h"
 #include "pthread.h"
 
-#define NUMBER_OF_THREADS 6
-#define NUMBER_OF_ACCESSES_PER__THREAD 100000
-#define KEY_RANGE 10
-#define REMOVE_INSERT_PROCENTAGE_INSERT 0.7
-
 
 /*
  * ==================
@@ -293,6 +288,10 @@ int test_previous(KVSet * (*create_kvset_fun)()){
 
 }
 
+int number_of_accesses_per_thread = 100000;
+int key_range = 10;
+int remove_insert_procentage_insert = 0.7;
+
 KVSet* global_skiplist;
 
 void * test_concurrent_insert_thread(void * x){
@@ -300,8 +299,8 @@ void * test_concurrent_insert_thread(void * x){
     long key;
     unsigned short * xsubi = (unsigned short *)x;
     kvset_init_thread(pthread_self());
-    for(i = 0; i < NUMBER_OF_ACCESSES_PER__THREAD; i++){
-        key = 1+KEY_RANGE*2 + jrand48(xsubi)%KEY_RANGE;
+    for(i = 0; i < number_of_accesses_per_thread; i++){
+        key = 1+key_range*2 + jrand48(xsubi)%key_range;
         if(key!=0)
             global_skiplist->funs.put(global_skiplist,TO_VP(key));
         //printf("%d\n",i);
@@ -309,12 +308,16 @@ void * test_concurrent_insert_thread(void * x){
     return NULL;
 }
 
-int test_concurrent_insert(KVSet * (*create_kvset_fun)()){
+int test_concurrent_insert(KVSet * (*create_kvset_fun)(),
+                           int my_number_of_accesses_per_thread,
+                           int my_key_range){
     int i;
     unsigned short xsubis[64*NUMBER_OF_THREADS]; 
     unsigned short * xsubiTmp;
     unsigned short * xsubi;
     pthread_t threads[NUMBER_OF_THREADS];
+    number_of_accesses_per_thread = my_number_of_accesses_per_thread;
+    key_range = my_key_range;
     global_skiplist = create_kvset_fun();
     for(i = 0; i < NUMBER_OF_THREADS; i++){
         xsubi = &xsubis[64*i];
@@ -338,9 +341,9 @@ void * test_concurrent_insert_remove_thread(void * x){
     long key;
     unsigned short * xsubi = (unsigned short *)x;
     kvset_init_thread(pthread_self());
-    for(i = 0; i < NUMBER_OF_ACCESSES_PER__THREAD; i++){
-        key = 1+KEY_RANGE*2 + jrand48(xsubi)%KEY_RANGE;
-        if(erand48(xsubi) < REMOVE_INSERT_PROCENTAGE_INSERT){
+    for(i = 0; i < number_of_accesses_per_thread; i++){
+        key = 1+key_range*2 + jrand48(xsubi)%key_range;
+        if(erand48(xsubi) < remove_insert_procentage_insert){
             global_skiplist->funs.put(global_skiplist,TO_VP(key));
         }else{
             global_skiplist->funs.remove(global_skiplist,TO_VP(key));
@@ -351,12 +354,18 @@ void * test_concurrent_insert_remove_thread(void * x){
 
 
 
-int test_concurrent_insert_remove(KVSet * (*create_kvset_fun)()){
+int test_concurrent_insert_remove(KVSet * (*create_kvset_fun)(),
+                                  int my_number_of_accesses_per_thread,
+                                  int my_key_range,
+                                  int my_remove_insert_procentage_insert){
     int i;
     unsigned short xsubis[64*NUMBER_OF_THREADS]; 
     unsigned short * xsubiTmp;
     unsigned short * xsubi;
     pthread_t threads[NUMBER_OF_THREADS];
+    number_of_accesses_per_thread = my_number_of_accesses_per_thread;
+    key_range = my_key_range;
+    remove_insert_procentage_insert = my_remove_insert_procentage_insert;
     global_skiplist = create_kvset_fun();
     for(i = 0; i < NUMBER_OF_THREADS; i++){
         xsubi = &xsubis[64*i];
@@ -392,7 +401,7 @@ void test_general_kvset_properties(KVSet * (*create_kvset_fun)()){
     kvset_init_thread(1);
     printf("\033[32m -- STARTING GENERAL PROPERTIES TESTS! -- \033[m\n");
 
-        T(test_create_and_delete(create_kvset_fun), "test_create_and_delete()");
+    T(test_create_and_delete(create_kvset_fun), "test_create_and_delete()");
     T(test_insert(create_kvset_fun), "test_insert()");
     T(test_insert_write_over(create_kvset_fun), "test_insert_write_over()");
     T(test_lookup(create_kvset_fun), "test_lookup()");
@@ -420,8 +429,30 @@ void test_ordered_kvset_properties(KVSet * (*create_kvset_fun)()){
 void test_concurrent_kvset_properties(KVSet * (*create_kvset_fun)()){
     printf("\033[32m -- STARTING CONCURRENT PROPERTIES TESTS! -- \033[m\n");
     kvset_init();
-    T(test_concurrent_insert(create_kvset_fun), "test_concurrent_insert()");
-    T(test_concurrent_insert_remove(create_kvset_fun), "test_concurrent_insert_remove()");
+    T(test_concurrent_insert(create_kvset_fun, 10000, 1), "test_concurrent_insert(10000, 1)");
+    T(test_concurrent_insert(create_kvset_fun, 10000, 2), "test_concurrent_insert(10000, 2)");
+    T(test_concurrent_insert(create_kvset_fun, 10000, 4), "test_concurrent_insert(10000, 4)");
+    T(test_concurrent_insert(create_kvset_fun, 100000, 8), "test_concurrent_insert(100000, 8)");
+    T(test_concurrent_insert(create_kvset_fun, 100000, 16), "test_concurrent_insert(100000, 16)");
+    T(test_concurrent_insert(create_kvset_fun, 100000, 32), "test_concurrent_insert(100000, 32)");
+    T(test_concurrent_insert(create_kvset_fun, 1000000, 1000), "test_concurrent_insert(1000000, 1000)");
+    T(test_concurrent_insert(create_kvset_fun, 1000000, 10000), "test_concurrent_insert(1000000, 10000)");
+    T(test_concurrent_insert(create_kvset_fun, 1000000, 100000), "test_concurrent_insert(1000000, 100000)");
+    T(test_concurrent_insert(create_kvset_fun, 1000000, 1000000), "test_concurrent_insert(1000000, 1000000)");
+    T(test_concurrent_insert(create_kvset_fun, 1000000, 10000000), "test_concurrent_insert(1000000, 10000000)");
+    
+    T(test_concurrent_insert_remove(create_kvset_fun, 10000, 1, 0.7), "test_concurrent_insert_remove(10000, 1, 0.7)");
+    T(test_concurrent_insert_remove(create_kvset_fun, 10000, 2, 0.7), "test_concurrent_insert_remove(10000, 2, 0.7)");
+    T(test_concurrent_insert_remove(create_kvset_fun, 10000, 4, 0.7), "test_concurrent_insert_remove(10000, 4, 0.7)");
+    T(test_concurrent_insert_remove(create_kvset_fun, 100000, 8, 0.7), "test_concurrent_insert_remove(100000, 8, 0.7)");
+    T(test_concurrent_insert_remove(create_kvset_fun, 100000, 16, 0.7), "test_concurrent_insert_remove(100000, 16, 0.7)");
+    T(test_concurrent_insert_remove(create_kvset_fun, 100000, 32, 0.7), "test_concurrent_insert_remove(100000, 32, 0.7)");
+    T(test_concurrent_insert_remove(create_kvset_fun, 1000000, 1000, 0.7), "test_concurrent_insert_remove(1000000, 1000, 0.7)");
+    T(test_concurrent_insert_remove(create_kvset_fun, 1000000, 10000, 0.7), "test_concurrent_insert_remove(1000000, 10000, 0.7)");
+    T(test_concurrent_insert_remove(create_kvset_fun, 1000000, 100000, 0.7), "test_concurrent_insert_remove(1000000, 100000, 0.7)");
+    T(test_concurrent_insert_remove(create_kvset_fun, 1000000, 1000000, 0.7), "test_concurrent_insert_remove(1000000, 1000000, 0.7)");
+    T(test_concurrent_insert_remove(create_kvset_fun, 1000000, 10000000, 0.7), "test_concurrent_insert_remove(1000000, 10000000, 0.7)");
+
     //T(test_concurrent_insert_remove_lookup(create_kvset_fun), "test_concurrent_insert_remove_lookup()");
 
     printf("\033[32m -- CONCURRENT PROPERTIES TESTS COMPLETED! -- \033[m\n");
