@@ -377,7 +377,6 @@ void skiplist_delete(KVSet* kv_set,
 
     SkiplistNode* node_temp = head_node->lower_lists[head_node->num_of_levels -1];
     SkiplistNode* node_iter = node_temp;
-
     while(node_iter->info &  SKIPLIST_NORMAL_NODE){
         node_temp = node_iter;
         node_iter = node_iter->lower_lists[node_iter->num_of_levels -1];
@@ -389,7 +388,6 @@ void skiplist_delete(KVSet* kv_set,
     hazard_pointer_free_everything(&skiplist->hazard_pointer_data, skiplist->free);
     skiplist->free(node_iter);
     skiplist->free(kv_set);
-
     return;
 }
 

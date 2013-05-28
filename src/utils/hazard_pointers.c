@@ -149,11 +149,11 @@ void hazard_pointer_free(HazardPointerData * data, void * pointer, void (*free)(
     }
 }
 
-void hazard_pointer_free_everything(HazardPointerData * data, void (*free)(void *)){
+void hazard_pointer_free_everything(HazardPointerData * data, void (*freeFunc)(void *)){
     ThreadHazardPointerData * local_data_iter = data->thread_data_list_first;
     ThreadHazardPointerData * local_data_iter_prev;  
-        while(local_data_iter != NULL){
-        do_free_scan(data, local_data_iter,free);
+    while(local_data_iter != NULL){
+        do_free_scan(data, local_data_iter,freeFunc);
         local_data_iter = local_data_iter->next;
     }
     local_data_iter = data->thread_data_list_first;
