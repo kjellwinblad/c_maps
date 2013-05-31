@@ -7,4 +7,7 @@ benchmark_skiplist
 .\#
 *.dat
 *.png
-
+bin
+bin_debug
+bin_profile
+.sconsign.dblite

@@ -113,6 +113,31 @@ void * hazard_pointer_add(HazardPointerData * data, void ** pointer){
     return myData->hazard_pointers[slot];
 }
 
+void * hazard_pointer_set(HazardPointerData * data, int slot, void ** pointer){
+    ThreadHazardPointerData * myData = pthread_getspecific(data->my_hazard_pointer_data);
+    if(myData==NULL){
+        myData = hazard_pointer_thread_initialize(data);
+        pthread_setspecific(data->my_hazard_pointer_data, myData);
+    }
+    do{
+        myData->hazard_pointers[slot] = ACCESS_ONCE(*pointer);
+        __sync_synchronize();
+    }while(myData->hazard_pointers[slot] != ACCESS_ONCE(*pointer));
+    return myData->hazard_pointers[slot];
+}
+
+
+void * hazard_pointer_move_set(HazardPointerData * data, 
+                               int move_prev_slot_value_to_slot, 
+                               int slot,
+                               void ** pointer){
+    ThreadHazardPointerData * myData = pthread_getspecific(data->my_hazard_pointer_data);
+    myData->hazard_pointers[move_prev_slot_value_to_slot] = 
+        myData->hazard_pointers[slot];
+    barrier();
+    return hazard_pointer_set(data, slot, pointer);
+}
+
 void hazard_pointer_remove(HazardPointerData * data, void * pointer){
     int slot;
     ThreadHazardPointerData * myData = pthread_getspecific(data->my_hazard_pointer_data);
@@ -125,6 +150,15 @@ void hazard_pointer_remove(HazardPointerData * data, void * pointer){
     }while(myData->hazard_pointers[slot] != pointer);
     myData->hazard_pointers[slot] = NULL;
     myData->current_hp_slot = slot;
+    __sync_synchronize();
+}
+
+void hazard_pointer_remove_all(HazardPointerData * data, int upto){
+    int slot;
+    ThreadHazardPointerData * myData = pthread_getspecific(data->my_hazard_pointer_data);
+    for(slot = 0; slot <= upto; slot++){
+        myData->hazard_pointers[slot] = NULL;
+    }
     __sync_synchronize();
 }
 

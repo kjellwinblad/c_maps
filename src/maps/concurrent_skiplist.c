@@ -131,16 +131,7 @@ int compare(SkiplistNode* skiplist,
 
 static inline
 void remove_hazard_pointers(HazardPointerData * hpdata, struct find_result * neigbours){
-    int link_level;
-    if(neigbours->element_skiplist != NULL){
-        hazard_pointer_remove(hpdata, neigbours->element_skiplist);
-    }
-    for(link_level = SKIPLIST_NUM_OF_LEVELS - 1; 
-        link_level >= 0; 
-        link_level--){
-        hazard_pointer_remove(hpdata, neigbours->neigbours_before[link_level]);
-        hazard_pointer_remove(hpdata, neigbours->neigbours_after[link_level]);
-    }
+    hazard_pointer_remove_all(hpdata, 63);
 }
 
 static inline 
@@ -149,19 +140,18 @@ struct one_level_find_result find_neigbours_1_level(SkiplistNode* skiplist,
                                                     int level,
                                                     int (*compare_function)(void *, void *),
                                                     unsigned int key_offset,
-                                                    SkiplistNode* prev_skiplist_element,
                                                     HazardPointerData * hpdata){
     int cmp_result;
     SkiplistNode* skiplist_prev = skiplist;
     int level_pos = level - (SKIPLIST_NUM_OF_LEVELS - skiplist_prev->num_of_levels);
     SkiplistNode* skiplist_next;
     struct one_level_find_result result;
-    hazard_pointer_add(hpdata, (void**)&skiplist_prev);
-    skiplist_next = hazard_pointer_add(hpdata, 
+    int prev_hp_slot = level;
+    int next_hp_slot = level + 1;
+    int element_skiplist_pos = 61;
+    hazard_pointer_set(hpdata, prev_hp_slot, (void**)&skiplist_prev);
+    skiplist_next = hazard_pointer_set(hpdata, next_hp_slot,
                                        (void**)&skiplist_prev->lower_lists[level_pos]);
-    if(prev_skiplist_element != NULL){
-        hazard_pointer_remove(hpdata, prev_skiplist_element);
-    }
     do{
         cmp_result = compare(skiplist_next,
                              element,
@@ -176,15 +166,14 @@ struct one_level_find_result find_neigbours_1_level(SkiplistNode* skiplist,
             result.neigbour_before = skiplist_prev;
             result.element_skiplist = skiplist_next;
             result.neigbour_after = 
-                hazard_pointer_add(hpdata, 
-                                   (void**)&skiplist_next->lower_lists[level_pos]);
+                hazard_pointer_move_set(hpdata, element_skiplist_pos, next_hp_slot,
+                                        (void**)&skiplist_next->lower_lists[level_pos]);
         } else {
             level_pos = level - (SKIPLIST_NUM_OF_LEVELS - skiplist_next->num_of_levels);
-            hazard_pointer_remove(hpdata, skiplist_prev);
             skiplist_prev = skiplist_next;
             skiplist_next = 
-                hazard_pointer_add(hpdata, 
-                                   (void**)&skiplist_next->lower_lists[level_pos]);
+                hazard_pointer_move_set(hpdata, prev_hp_slot, next_hp_slot,
+                                        (void**)&skiplist_next->lower_lists[level_pos]);
         }
     } while(0 > cmp_result);
 
@@ -212,7 +201,6 @@ struct find_result find_neigbours(SkiplistNode* skiplist,
                                    level, 
                                    compare_function, 
                                    key_offset,
-                                   level_result.element_skiplist,
                                    hpdata);
         result.neigbours_before[level] = level_result.neigbour_before;
         result.neigbours_after[level] = level_result.neigbour_after;
@@ -257,10 +245,8 @@ struct validate_lock_result validate_and_lock(struct find_result * neigbours,
 
         if(neigbours->element_skiplist != NULL){
             level_pos = link_level - (SKIPLIST_NUM_OF_LEVELS - neigbours->element_skiplist->num_of_levels);
-            
-            hazard_pointer_remove(hpdata, neigbours->neigbours_after[link_level]);
             succs = 
-                hazard_pointer_add(hpdata, 
+                hazard_pointer_set(hpdata, link_level + 1, 
                                    (void**)&neigbours->element_skiplist->lower_lists[level_pos]);
             neigbours->neigbours_after[link_level] = succs;
         }else{

@@ -19,9 +19,14 @@ debug_flags = ['-O1',
 
 optimization_flags = ['-O3']
 
+profile_flags = ['-fno-omit-frame-pointer -O2']
+
 if(mode=='debug'):
     std_cc_flags = std_cc_flags + debug_flags
     std_link_flags = std_link_flags + debug_flags
+elif(mode=='profile'):
+    std_cc_flags = std_cc_flags + profile_flags
+    std_link_flags = std_link_flags + profile_flags
 else:
     std_cc_flags = std_cc_flags + optimization_flags
     std_link_flags = std_link_flags + optimization_flags
