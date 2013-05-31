@@ -37,6 +37,7 @@ typedef struct skiplist {
     void (*free)(void *);
     void *(*malloc)(size_t size);
     SkiplistNode head_node;
+    SkiplistNode * end_node;
 } Skiplist;
 
 struct one_level_find_result {
@@ -149,7 +150,6 @@ struct one_level_find_result find_neigbours_1_level(SkiplistNode* skiplist,
     int prev_hp_slot = level;
     int next_hp_slot = level + 1;
     int element_skiplist_pos = 61;
-    hazard_pointer_set(hpdata, prev_hp_slot, (void**)&skiplist_prev);
     skiplist_next = hazard_pointer_set(hpdata, next_hp_slot,
                                        (void**)&skiplist_prev->lower_lists[level_pos]);
     do{
@@ -693,6 +693,7 @@ KVSet * new_skiplist(int (*compare_function)(void *, void *),
     skiplist->compare = compare_function;
     skiplist->free = free_function;
     skiplist->malloc = malloc_function;
+    skiplist->end_node = rightmost_skiplist;
 
     leftmost_skiplist->element = NULL;
     leftmost_skiplist->num_of_levels = SKIPLIST_NUM_OF_LEVELS;
