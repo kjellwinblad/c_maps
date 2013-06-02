@@ -150,8 +150,8 @@ struct one_level_find_result find_neigbours_1_level(SkiplistNode* skiplist,
     int prev_hp_slot = level;
     int next_hp_slot = level + 1;
     int element_skiplist_pos = 61;
-    skiplist_next = hazard_pointer_set(hpdata, next_hp_slot,
-                                       (void**)&skiplist_prev->lower_lists[level_pos]);
+    skiplist_next = hazard_pointer_set_check(hpdata, next_hp_slot,
+                                             (void**)&skiplist_prev->lower_lists[level_pos], next_hp_slot - 2);
     do{
         cmp_result = compare(skiplist_next,
                              element,
@@ -166,14 +166,14 @@ struct one_level_find_result find_neigbours_1_level(SkiplistNode* skiplist,
             result.neigbour_before = skiplist_prev;
             result.element_skiplist = skiplist_next;
             result.neigbour_after = 
-                hazard_pointer_move_set(hpdata, element_skiplist_pos, next_hp_slot,
-                                        (void**)&skiplist_next->lower_lists[level_pos]);
+                hazard_pointer_move_set_check(hpdata, element_skiplist_pos, next_hp_slot,
+                                        (void**)&skiplist_next->lower_lists[level_pos], next_hp_slot - 2);
         } else {
             level_pos = level - (SKIPLIST_NUM_OF_LEVELS - skiplist_next->num_of_levels);
             skiplist_prev = skiplist_next;
             skiplist_next = 
-                hazard_pointer_move_set(hpdata, prev_hp_slot, next_hp_slot,
-                                        (void**)&skiplist_next->lower_lists[level_pos]);
+                hazard_pointer_move_set_check(hpdata, prev_hp_slot, next_hp_slot,
+                                              (void**)&skiplist_next->lower_lists[level_pos], next_hp_slot-2);
         }
     } while(0 > cmp_result);
 

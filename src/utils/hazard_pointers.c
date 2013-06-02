@@ -126,12 +126,63 @@ void * hazard_pointer_set(HazardPointerData * data, int slot, void ** pointer){
     return myData->hazard_pointers[slot];
 }
 
+void * hazard_pointer_set_check(HazardPointerData * data, int slot, void ** pointer, int pos_to_check){
+    ThreadHazardPointerData * myData = pthread_getspecific(data->my_hazard_pointer_data);
+    void * checkPosValue;
+    if(myData==NULL){
+        myData = hazard_pointer_thread_initialize(data);
+        pthread_setspecific(data->my_hazard_pointer_data, myData);
+    }
+    
+    if(pos_to_check >= 0){
+        checkPosValue = myData->hazard_pointers[pos_to_check];
+        //Maybe read barrier here on other than x86
+        if(checkPosValue == ACCESS_ONCE(*pointer)){
+            //Hazard pointer already stored, safe to return
+            myData->hazard_pointers[slot] = checkPosValue;
+            barrier();
+            return checkPosValue;
+        }
+    }
+    do{
+        myData->hazard_pointers[slot] = ACCESS_ONCE(*pointer);
+        __sync_synchronize();
+    }while(myData->hazard_pointers[slot] != ACCESS_ONCE(*pointer));
+    return myData->hazard_pointers[slot];
+}
+
 
 void * hazard_pointer_move_set(HazardPointerData * data, 
                                int move_prev_slot_value_to_slot, 
                                int slot,
                                void ** pointer){
     ThreadHazardPointerData * myData = pthread_getspecific(data->my_hazard_pointer_data);
+    myData->hazard_pointers[move_prev_slot_value_to_slot] = 
+        myData->hazard_pointers[slot];
+    barrier();
+    return hazard_pointer_set(data, slot, pointer);
+}
+
+void * hazard_pointer_move_set_check(HazardPointerData * data, 
+                               int move_prev_slot_value_to_slot, 
+                               int slot,
+                               void ** pointer,
+                               int pos_to_check){
+    ThreadHazardPointerData * myData = pthread_getspecific(data->my_hazard_pointer_data);
+    void * checkPosValue;
+    if(pos_to_check >= 0){
+        checkPosValue = myData->hazard_pointers[pos_to_check];
+        //Maybe read barrier here on other than x86
+        if(checkPosValue == ACCESS_ONCE(*pointer)){
+            //Hazard pointer already stored, safe to return
+            myData->hazard_pointers[move_prev_slot_value_to_slot] = 
+                myData->hazard_pointers[slot];
+            barrier();//Total store order
+            myData->hazard_pointers[slot] = checkPosValue;
+            barrier();
+            return checkPosValue;
+        }
+    }
     myData->hazard_pointers[move_prev_slot_value_to_slot] = 
         myData->hazard_pointers[slot];
     barrier();

@@ -39,10 +39,18 @@ void * hazard_pointer_add(HazardPointerData * data, void ** pointer);
 
 void * hazard_pointer_set(HazardPointerData * data, int slot, void ** pointer);
 
+void * hazard_pointer_set_check(HazardPointerData * data, int slot, void ** pointer, int pos_to_check);
+
 void * hazard_pointer_move_set(HazardPointerData * data, 
                                int move_prev_slot_value_to_slot, 
                                int slot,
                                void ** pointer);
+
+void * hazard_pointer_move_set_check(HazardPointerData * data, 
+                               int move_prev_slot_value_to_slot, 
+                               int slot,
+                               void ** pointer,
+                               int pos_to_check);
 
 void hazard_pointer_remove(HazardPointerData * data, void * pointer);
 
