@@ -13,27 +13,22 @@ of the Skiplist data-structure but more implementations will come.
 The following tools are required to test and build:
 
 * git
-* GNU Make
 * gcc
-* valgrind
+* [Scons](http://www.scons.org/)
 
 Run something like the following on Debian and Ubuntu systems:
 
-`sudo apt-get install git make gcc valgrind`
+`sudo apt-get install git scons gcc`
 
 ### Step by Step Instructions ###
 
 1. `git clone git://github.com/kjellwinblad/c_maps.git`
-2. `cd c_skiplist`
-3. `make run_test_skiplist`
+2. `cd c_maps`
+3. `scons`
+4. `./bin/test_concurrent_skiplist`
 
 If everything is alright the message *"SKIPLIST TESTS COMPLETED!"*
 will be printed to standard output.
-
-## Run Benchmark ##
-
-1. Follow the instructions in section *Build and Test*
-2. `make run_benchmark_skiplist`
 
 ## Usage  ##
 
